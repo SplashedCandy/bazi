@@ -1,0 +1,1375 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<meta name="description" content="八字命盘：输入出生信息，自动排盘并按传统规则分析。">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>八字命盘</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=Noto+Serif+SC:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#ECE8DF; --panel:#F8F6F0; --ink:#23201C; --muted:#6C655B; --line:#D6CDBD; --soft:#E7E1D4;
+  --seal:#A8322D; --seal-ink:#FFF8F0; --accent:#2F6F74;
+  --r-good:#2F7A55; --r-ok:#4E8C8F; --r-even:#8A857B; --r-tight:#B57A1E; --r-bad:#A8322D;
+  --brush:"Ma Shan Zheng","STKaiti","KaiTi","Kaiti SC",serif;
+  --serif:"Noto Serif SC","Noto Serif JP","Songti SC","SimSun","Hiragino Mincho ProN",serif;
+  color-scheme: light;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#141518; --panel:#1D1E22; --ink:#E9E3D7; --muted:#A49D91; --line:#36373C; --soft:#26272C;
+    --seal:#D25A4E; --seal-ink:#1A0F0D; --accent:#72B6BA;
+    --r-good:#6FBF8E; --r-ok:#79B9BC; --r-even:#9C978D; --r-tight:#E0A94F; --r-bad:#E57366;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#141518; --panel:#1D1E22; --ink:#E9E3D7; --muted:#A49D91; --line:#36373C; --soft:#26272C;
+  --seal:#D25A4E; --seal-ink:#1A0F0D; --accent:#72B6BA;
+  --r-good:#6FBF8E; --r-ok:#79B9BC; --r-even:#9C978D; --r-tight:#E0A94F; --r-bad:#E57366;
+  color-scheme: dark;
+}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*::before,*::after{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--serif);font-size:15px;line-height:1.7;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1200px;margin:0 auto;padding:28px 20px 60px}
+header.top{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:24px}
+.brand{display:flex;align-items:center;gap:16px}
+.seal{width:54px;height:54px;background:var(--seal);color:var(--seal-ink);display:grid;place-items:center;font-family:var(--brush);font-size:34px;border-radius:6px;box-shadow:inset 0 0 0 3px var(--seal),inset 0 0 0 4.5px var(--seal-ink);line-height:1}
+h1{font-family:var(--brush);font-weight:400;font-size:40px;line-height:1.1;margin:0;letter-spacing:.04em}
+.sub{color:var(--muted);font-size:14px;margin-top:4px}
+.lang{display:flex;border:1px solid var(--line);border-radius:999px;overflow:hidden;background:var(--panel)}
+.lang button{border:0;background:transparent;color:var(--muted);font:inherit;font-size:13px;padding:6px 14px;cursor:pointer}
+.lang button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
+.grid{display:grid;grid-template-columns:300px minmax(0,1fr);gap:22px;align-items:start}
+@media (max-width:920px){.grid{grid-template-columns:minmax(0,1fr)}}
+main{min-width:0}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px}
+.form label{display:block;font-size:13px;color:var(--muted);margin:12px 0 4px}
+.form label:first-child{margin-top:0}
+.form label.sublab{margin:6px 0 3px;font-size:12px}
+.form input[type=text],.form input[type=date],.form input[type=time],.form input[type=number],.form select{width:100%;font:inherit;font-size:14px;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px 10px}
+.form input:focus-visible,.form select:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.seg{display:flex;gap:6px}
+.seg label{margin:0;flex:1;display:flex;align-items:center;justify-content:center;gap:6px;border:1px solid var(--line);border-radius:8px;padding:7px 4px;cursor:pointer;color:var(--ink);font-size:14px;background:var(--bg)}
+.seg input{accent-color:var(--seal)}
+.check{display:flex!important;align-items:flex-start;gap:8px;color:var(--ink)!important;font-size:13px!important;cursor:pointer}
+.check input{margin-top:4px;accent-color:var(--seal)}
+.hint{font-size:12px;color:var(--muted);margin-top:4px;line-height:1.5}
+.btns{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px}
+.btn{font:inherit;font-size:14px;border-radius:8px;padding:9px 16px;cursor:pointer;border:1px solid var(--line);background:var(--bg);color:var(--ink)}
+.btn.primary{background:var(--seal);border-color:var(--seal);color:var(--seal-ink);flex:1}
+.btn[hidden]{display:none}
+.saved{margin-top:16px;border-top:1px dashed var(--line);padding-top:12px}
+.saved h3{font-size:13px;color:var(--muted);font-weight:400;margin:0 0 6px}
+.saved ul{list-style:none;margin:0;padding:0}
+.saved li{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:5px 0;font-size:14px}
+.saved li button{font:inherit;font-size:12px;background:none;border:0;color:var(--accent);cursor:pointer;padding:2px 4px}
+.saved li button.del{color:var(--muted)}
+.empty{padding:72px 24px;text-align:center;color:var(--muted);font-size:15px}
+.err{color:var(--seal);font-size:13px;margin-top:8px;min-height:1em}
+.chartcard{padding:0;overflow:hidden}
+.charthead{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;padding:12px 16px;border-bottom:1px solid var(--line)}
+.layers{display:flex;gap:6px;flex-wrap:wrap}
+.chip{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;border:1px solid var(--line);border-radius:999px;padding:4px 10px;cursor:pointer;color:var(--ink);background:var(--bg);user-select:none}
+.chip input{accent-color:var(--seal);margin:0}
+.chartscroll{overflow-x:auto}
+.chartscroll svg{display:block;min-width:760px;width:100%;height:auto}
+@media (max-width:600px){.chartscroll svg{min-width:680px}}
+.legend{display:flex;gap:14px;flex-wrap:wrap;padding:10px 16px;border-top:1px solid var(--line);font-size:12.5px;color:var(--muted)}
+.legend span{display:inline-flex;align-items:center;gap:5px}
+.strip{display:flex;gap:8px;overflow-x:auto;padding:4px 2px 8px}
+.lc{flex:0 0 auto;min-width:74px;border:1px solid var(--line);background:var(--bg);border-radius:10px;padding:6px 8px;text-align:center;cursor:pointer;font:inherit;color:var(--ink)}
+.lc[aria-pressed="true"]{border-color:var(--seal);box-shadow:0 0 0 1.5px var(--seal) inset}
+.lc .gz{font-family:var(--brush);font-size:24px;line-height:1.2}
+.lc .meta{font-size:11.5px;color:var(--muted);line-height:1.3}
+.lc .dot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:4px;vertical-align:middle}
+.sect{margin-top:18px}
+.sect h2{font-size:15px;font-weight:600;margin:0 0 8px}
+.tabs{display:flex;gap:4px;flex-wrap:wrap;border-bottom:1px solid var(--line);margin:26px 0 0}
+.tabs button{font:inherit;font-size:14px;background:none;border:0;border-bottom:2px solid transparent;padding:10px 12px;color:var(--muted);cursor:pointer;margin-bottom:-1px}
+.tabs button[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--seal)}
+.tabpanel{padding:20px 2px 0}
+.tabpanel h3{font-size:16px;font-weight:600;margin:22px 0 8px}
+.tabpanel h3:first-child{margin-top:4px}
+.tabpanel p{margin:6px 0;max-width:72ch}
+.tblwrap{overflow-x:auto}
+table.tbl{border-collapse:collapse;font-size:14px;min-width:100%;margin:4px 0 8px}
+.tbl th,.tbl td{text-align:left;padding:7px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+.tbl th{font-weight:400;color:var(--muted);font-size:13px;white-space:nowrap}
+.tbl tr.now td{background:var(--soft)}
+.gzc{font-family:var(--brush);font-size:19px;letter-spacing:.04em}
+.rate{display:inline-block;font-size:12px;border-radius:999px;padding:1px 9px;border:1px solid currentColor;white-space:nowrap}
+.bar{height:8px;border-radius:4px;background:var(--soft);min-width:120px;overflow:hidden}
+.bar i{display:block;height:100%}
+.cols2{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:4px 28px}
+.note{font-size:13px;color:var(--muted);margin-top:18px;max-width:80ch}
+.tag{display:inline-block;font-size:12px;border-radius:6px;padding:0 6px;background:var(--soft);margin-right:4px}
+
+.scorebar{display:flex;justify-content:flex-end;margin-bottom:-6px}
+.seg2{display:inline-flex;gap:6px}
+.seg2 button[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.btn.sm{padding:3px 11px;font-size:14px;line-height:1.5}
+.cmp{display:flex;gap:6px;flex-wrap:wrap}
+.sw{display:inline-block;width:10px;height:10px;border-radius:50%;flex:0 0 auto}
+.chip input:disabled~*{opacity:.45}
+.radarwrap{position:relative;margin-top:12px}
+.radarscroll{overflow-x:auto}
+.radarscroll svg{display:block;width:100%;max-width:720px;min-width:330px;height:auto;margin:0 auto}
+.radar .hit{cursor:pointer;outline:none}
+.radar .hit:focus-visible{stroke:var(--accent);stroke-width:2}
+.tip{position:absolute;z-index:5;max-width:280px;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:8px 10px;font-size:13px;line-height:1.55;box-shadow:0 6px 18px rgba(0,0,0,.14);pointer-events:none}
+.board{margin-top:14px}
+.bh{display:flex;align-items:center;gap:8px;font-weight:600;padding:6px 0;border-bottom:1px solid var(--line)}
+.bh .hint{margin:0 0 0 auto}
+.dim{display:grid;grid-template-columns:minmax(150px,1.1fr) minmax(150px,auto) minmax(200px,2fr);gap:6px 18px;align-items:start;padding:10px 0;border-bottom:1px solid var(--line)}
+@media (max-width:760px){.dim{grid-template-columns:1fr}}
+.dc{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.dv{min-width:46px;text-align:center;font-size:19px;font-weight:600;line-height:1.2}
+.dv.man{color:var(--seal)}
+.dv em{display:block;font-style:normal;font-size:11px;font-weight:400}
+.lnk{background:none;border:0;color:var(--accent);font:inherit;font-size:12px;cursor:pointer;padding:0 2px}
+.stamp{display:inline-block;font-size:12px;line-height:1.35;color:var(--seal-ink);background:var(--seal);border-radius:3px;padding:0 5px;margin-left:4px;font-family:var(--brush)}
+.mdot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--seal);vertical-align:middle;margin-left:3px}
+@media (prefers-reduced-motion:no-preference){
+  #chartsvg{animation:ink .6s ease-out both}
+  @keyframes ink{from{opacity:0;filter:blur(2px)}to{opacity:1;filter:none}}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="brand">
+      <div class="seal" aria-hidden="true">命</div>
+      <div><h1 id="t-title">八字命盘</h1><div class="sub" id="t-sub"></div></div>
+    </div>
+    <div class="lang" role="group" aria-label="Language">
+      <button data-lang="zh">中文</button><button data-lang="ja">日本語</button><button data-lang="en">EN</button>
+    </div>
+  </header>
+  <div class="grid">
+    <aside class="panel form" id="form"></aside>
+    <main>
+      <section class="panel chartcard">
+        <div class="charthead">
+          <div class="layers" id="layers"></div>
+          <div class="btns" style="margin:0">
+            <button class="btn" id="b-png" hidden></button>
+            <button class="btn" id="b-svg" hidden></button>
+          </div>
+        </div>
+        <div class="chartscroll" id="chartwrap"></div>
+        <div class="legend" id="legend"></div>
+      </section>
+      <section class="sect"><h2 id="t-luck"></h2><div class="strip" id="luckstrip"></div></section>
+      <section class="sect"><h2 id="t-years"></h2><div class="strip" id="yearstrip"></div></section>
+    </main>
+  </div>
+  <nav class="tabs" role="tablist" id="tabs"></nav>
+  <section class="tabpanel" id="tabpanel" role="tabpanel"></section>
+  <p class="note" id="t-disc"></p>
+</div>
+<script>
+"use strict";
+const S='甲乙丙丁戊己庚辛壬癸'.split(''), B='子丑寅卯辰巳午未申酉戌亥'.split('');
+const SE=s=>Math.floor(s/2), BE=[4,2,0,0,2,1,1,2,3,3,2,4];
+const HID=[[9],[5,9,7],[0,2,4],[1],[4,1,9],[2,4,6],[3,5],[5,3,1],[6,8,4],[7],[4,7,3],[8,0]];
+const HW=[1,0.5,0.3], POSM=[1,2.5,1.5,1];
+const ZS=[11,6,2,9,2,9,5,0,8,3];
+const mod=(a,n)=>((a%n)+n)%n;
+const jz=(s,b)=>mod(6*s-5*b,60);
+const gen=e=>(e+4)%5, ctrl=e=>(e+3)%5;
+function tg(dm,s){const de=SE(dm),oe=SE(s),same=(dm%2)===(s%2);
+  if(oe===de)return same?0:1; if((de+1)%5===oe)return same?2:3; if((de+2)%5===oe)return same?4:5;
+  if((oe+2)%5===de)return same?6:7; return same?8:9;}
+const stage=(s,b)=>s%2===0?mod(b-ZS[s],12):mod(ZS[s]-b,12);
+const CN_DST={1986:[5,4,9,14],1987:[4,12,9,13],1988:[4,10,9,11],1989:[4,16,9,17],1990:[4,15,9,16],1991:[4,14,9,15]};
+const HE6={'0-1':2,'2-11':0,'3-10':1,'4-9':3,'5-8':4,'6-7':1};
+const PO=['0-9','3-6','1-4','7-10','2-11','5-8'], XING=['2-5','5-8','2-8','1-10','7-10','1-7','0-3'];
+const SANHE=[[8,0,4,4],[11,3,7,0],[2,6,10,1],[5,9,1,3]], SANHUI=[[2,3,4,0],[5,6,7,1],[8,9,10,3],[11,0,1,4]];
+const STEMHE_EL=[2,3,4,0,1];
+const pk=(a,b)=>a<b?a+'-'+b:b+'-'+a;
+
+const GEO=[
+{id:'cn',zh:'中国',ja:'中国',en:'China',tz:8,provs:[
+ {zh:'北京市',en:'Beijing',cities:[['北京','Beijing',116.40]]},{zh:'天津市',en:'Tianjin',cities:[['天津','Tianjin',117.20]]},
+ {zh:'上海市',en:'Shanghai',cities:[['上海','Shanghai',121.47]]},{zh:'重庆市',en:'Chongqing',cities:[['重庆','Chongqing',106.55]]},
+ {zh:'河北省',en:'Hebei',cities:[['石家庄','Shijiazhuang',114.51],['唐山','Tangshan',118.18],['保定','Baoding',115.46],['邯郸','Handan',114.49],['秦皇岛','Qinhuangdao',119.60]]},
+ {zh:'山西省',en:'Shanxi',cities:[['太原','Taiyuan',112.55],['大同','Datong',113.30],['运城','Yuncheng',111.00]]},
+ {zh:'内蒙古自治区',en:'Inner Mongolia',cities:[['呼和浩特','Hohhot',111.75],['包头','Baotou',109.84],['赤峰','Chifeng',118.89]]},
+ {zh:'辽宁省',en:'Liaoning',cities:[['沈阳','Shenyang',123.43],['大连','Dalian',121.61],['鞍山','Anshan',122.99],['锦州','Jinzhou',121.13]]},
+ {zh:'吉林省',en:'Jilin',cities:[['长春','Changchun',125.32],['吉林','Jilin City',126.55],['延吉','Yanji',129.51]]},
+ {zh:'黑龙江省',en:'Heilongjiang',cities:[['哈尔滨','Harbin',126.63],['齐齐哈尔','Qiqihar',123.96],['大庆','Daqing',125.10],['牡丹江','Mudanjiang',129.63]]},
+ {zh:'江苏省',en:'Jiangsu',cities:[['南京','Nanjing',118.80],['苏州','Suzhou',120.58],['无锡','Wuxi',120.31],['常州','Changzhou',119.97],['徐州','Xuzhou',117.28],['南通','Nantong',120.89],['扬州','Yangzhou',119.41]]},
+ {zh:'浙江省',en:'Zhejiang',cities:[['杭州','Hangzhou',120.16],['宁波','Ningbo',121.55],['温州','Wenzhou',120.70],['绍兴','Shaoxing',120.58],['金华','Jinhua',119.65]]},
+ {zh:'安徽省',en:'Anhui',cities:[['合肥','Hefei',117.23],['芜湖','Wuhu',118.38],['安庆','Anqing',117.06],['蚌埠','Bengbu',117.39]]},
+ {zh:'福建省',en:'Fujian',cities:[['福州','Fuzhou',119.30],['厦门','Xiamen',118.09],['泉州','Quanzhou',118.68],['漳州','Zhangzhou',117.65]]},
+ {zh:'江西省',en:'Jiangxi',cities:[['南昌','Nanchang',115.86],['九江','Jiujiang',116.00],['赣州','Ganzhou',114.93]]},
+ {zh:'山东省',en:'Shandong',cities:[['济南','Jinan',117.12],['青岛','Qingdao',120.38],['烟台','Yantai',121.45],['潍坊','Weifang',119.16],['临沂','Linyi',118.36]]},
+ {zh:'河南省',en:'Henan',cities:[['郑州','Zhengzhou',113.63],['洛阳','Luoyang',112.45],['开封','Kaifeng',114.31],['南阳','Nanyang',112.53],['新乡','Xinxiang',113.93]]},
+ {zh:'湖北省',en:'Hubei',cities:[['武汉','Wuhan',114.31],['宜昌','Yichang',111.29],['襄阳','Xiangyang',112.14],['荆州','Jingzhou',112.24]]},
+ {zh:'湖南省',en:'Hunan',cities:[['长沙','Changsha',112.94],['株洲','Zhuzhou',113.13],['衡阳','Hengyang',112.57],['岳阳','Yueyang',113.13],['常德','Changde',111.70]]},
+ {zh:'广东省',en:'Guangdong',cities:[['广州','Guangzhou',113.26],['深圳','Shenzhen',114.06],['珠海','Zhuhai',113.58],['佛山','Foshan',113.12],['东莞','Dongguan',113.75],['汕头','Shantou',116.68],['湛江','Zhanjiang',110.36]]},
+ {zh:'广西壮族自治区',en:'Guangxi',cities:[['南宁','Nanning',108.37],['桂林','Guilin',110.29],['柳州','Liuzhou',109.41]]},
+ {zh:'海南省',en:'Hainan',cities:[['海口','Haikou',110.20],['三亚','Sanya',109.51]]},
+ {zh:'四川省',en:'Sichuan',cities:[['成都','Chengdu',104.07],['绵阳','Mianyang',104.68],['南充','Nanchong',106.11],['宜宾','Yibin',104.64]]},
+ {zh:'贵州省',en:'Guizhou',cities:[['贵阳','Guiyang',106.63],['遵义','Zunyi',106.93]]},
+ {zh:'云南省',en:'Yunnan',cities:[['昆明','Kunming',102.83],['大理','Dali',100.23],['丽江','Lijiang',100.23]]},
+ {zh:'西藏自治区',en:'Tibet',cities:[['拉萨','Lhasa',91.13]]},
+ {zh:'陕西省',en:'Shaanxi',cities:[['西安','Xi’an',108.94],['咸阳','Xianyang',108.71],['宝鸡','Baoji',107.24],['渭南','Weinan',109.51],['铜川','Tongchuan',108.95],['汉中','Hanzhong',107.02],['安康','Ankang',109.03],['商洛','Shangluo',109.94],['延安','Yan’an',109.49],['榆林','Yulin',109.73]]},
+ {zh:'甘肃省',en:'Gansu',cities:[['兰州','Lanzhou',103.83],['天水','Tianshui',105.72]]},
+ {zh:'青海省',en:'Qinghai',cities:[['西宁','Xining',101.78]]},
+ {zh:'宁夏回族自治区',en:'Ningxia',cities:[['银川','Yinchuan',106.23]]},
+ {zh:'新疆维吾尔自治区',en:'Xinjiang',cities:[['乌鲁木齐','Urumqi',87.62],['喀什','Kashgar',75.99]]}]},
+{id:'hk',zh:'中国香港',ja:'香港',en:'Hong Kong',tz:8,provs:[{zh:'香港',en:'Hong Kong',cities:[['香港','Hong Kong',114.17]]}]},
+{id:'mo',zh:'中国澳门',ja:'マカオ',en:'Macau',tz:8,provs:[{zh:'澳门',ja:'マカオ',en:'Macau',cities:[['澳门','Macau',113.54,undefined,'マカオ']]}]},
+{id:'tw',zh:'中国台湾',ja:'台湾',en:'Taiwan',tz:8,provs:[{zh:'台湾',en:'Taiwan',cities:[['台北','Taipei',121.56],['高雄','Kaohsiung',120.30]]}]},
+{id:'jp',zh:'日本',ja:'日本',en:'Japan',tz:9,provs:[
+ {zh:'北海道',en:'Hokkaido',cities:[['札幌','Sapporo',141.35]]},{zh:'东京都',ja:'東京都',en:'Tokyo',cities:[['东京','Tokyo',139.69,undefined,'東京']]},
+ {zh:'神奈川县',ja:'神奈川県',en:'Kanagawa',cities:[['横滨','Yokohama',139.64,undefined,'横浜']]},{zh:'爱知县',ja:'愛知県',en:'Aichi',cities:[['名古屋','Nagoya',136.91]]},
+ {zh:'京都府',en:'Kyoto',cities:[['京都','Kyoto',135.77]]},{zh:'大阪府',en:'Osaka',cities:[['大阪','Osaka',135.50]]},{zh:'福冈县',ja:'福岡県',en:'Fukuoka',cities:[['福冈','Fukuoka',130.40,undefined,'福岡']]}]},
+{id:'kr',zh:'韩国',ja:'韓国',en:'South Korea',tz:9,provs:[{zh:'首尔特别市',ja:'ソウル特別市',en:'Seoul',cities:[['首尔','Seoul',126.98,undefined,'ソウル']]},{zh:'釜山广域市',ja:'釜山広域市',en:'Busan',cities:[['釜山','Busan',129.08]]}]},
+{id:'sg',zh:'新加坡',ja:'シンガポール',en:'Singapore',tz:8,provs:[{zh:'新加坡',ja:'シンガポール',en:'Singapore',cities:[['新加坡','Singapore',103.82,undefined,'シンガポール']]}]},
+{id:'my',zh:'马来西亚',ja:'マレーシア',en:'Malaysia',tz:8,provs:[{zh:'吉隆坡联邦直辖区',ja:'クアラルンプール',en:'Kuala Lumpur',cities:[['吉隆坡','Kuala Lumpur',101.69,undefined,'クアラルンプール']]}]},
+{id:'th',zh:'泰国',ja:'タイ',en:'Thailand',tz:7,provs:[{zh:'曼谷',ja:'バンコク',en:'Bangkok',cities:[['曼谷','Bangkok',100.50,undefined,'バンコク']]}]},
+{id:'vn',zh:'越南',ja:'ベトナム',en:'Vietnam',tz:7,provs:[{zh:'河内',ja:'ハノイ',en:'Hanoi',cities:[['河内','Hanoi',105.85,undefined,'ハノイ']]},{zh:'胡志明市',ja:'ホーチミン市',en:'Ho Chi Minh City',cities:[['胡志明市','Ho Chi Minh City',106.70,undefined,'ホーチミン']]}]},
+{id:'id',zh:'印度尼西亚',ja:'インドネシア',en:'Indonesia',tz:7,provs:[{zh:'雅加达首都特区',ja:'ジャカルタ首都特別州',en:'Jakarta',cities:[['雅加达','Jakarta',106.85,undefined,'ジャカルタ']]}]},
+{id:'ph',zh:'菲律宾',ja:'フィリピン',en:'Philippines',tz:8,provs:[{zh:'马尼拉大都会',ja:'マニラ首都圏',en:'Metro Manila',cities:[['马尼拉','Manila',120.98,undefined,'マニラ']]}]},
+{id:'in',zh:'印度',ja:'インド',en:'India',tz:5.5,provs:[{zh:'马哈拉施特拉邦',ja:'マハーラーシュトラ州',en:'Maharashtra',cities:[['孟买','Mumbai',72.88,undefined,'ムンバイ']]}]},
+{id:'ae',zh:'阿联酋',ja:'アラブ首長国連邦',en:'United Arab Emirates',tz:4,provs:[{zh:'迪拜酋长国',ja:'ドバイ首長国',en:'Dubai',cities:[['迪拜','Dubai',55.27,undefined,'ドバイ']]}]},
+{id:'au',zh:'澳大利亚',ja:'オーストラリア',en:'Australia',tz:10,provs:[{zh:'新南威尔士州',ja:'ニューサウスウェールズ州',en:'New South Wales',cities:[['悉尼','Sydney',151.21,undefined,'シドニー']]},{zh:'维多利亚州',ja:'ビクトリア州',en:'Victoria',cities:[['墨尔本','Melbourne',144.96,undefined,'メルボルン']]}]},
+{id:'nz',zh:'新西兰',ja:'ニュージーランド',en:'New Zealand',tz:12,provs:[{zh:'奥克兰大区',ja:'オークランド地方',en:'Auckland',cities:[['奥克兰','Auckland',174.76,undefined,'オークランド']]}]},
+{id:'ru',zh:'俄罗斯',ja:'ロシア',en:'Russia',tz:3,provs:[{zh:'莫斯科',ja:'モスクワ',en:'Moscow',cities:[['莫斯科','Moscow',37.62,undefined,'モスクワ']]}]},
+{id:'gb',zh:'英国',ja:'イギリス',en:'United Kingdom',tz:0,provs:[{zh:'英格兰',ja:'イングランド',en:'England',cities:[['伦敦','London',-0.13,undefined,'ロンドン']]}]},
+{id:'fr',zh:'法国',ja:'フランス',en:'France',tz:1,provs:[{zh:'法兰西岛',ja:'イル＝ド＝フランス',en:'Île-de-France',cities:[['巴黎','Paris',2.35,undefined,'パリ']]},{zh:'普罗旺斯',ja:'プロヴァンス',en:'Provence',cities:[['阿维尼翁','Avignon',4.81,undefined,'アヴィニョン']]}]},
+{id:'de',zh:'德国',ja:'ドイツ',en:'Germany',tz:1,provs:[{zh:'柏林州',ja:'ベルリン州',en:'Berlin',cities:[['柏林','Berlin',13.40,undefined,'ベルリン']]},{zh:'黑森州',ja:'ヘッセン州',en:'Hesse',cities:[['法兰克福','Frankfurt',8.68,undefined,'フランクフルト']]}]},
+{id:'ch',zh:'瑞士',ja:'スイス',en:'Switzerland',tz:1,provs:[{zh:'苏黎世州',ja:'チューリッヒ州',en:'Zurich',cities:[['苏黎世','Zurich',8.54,undefined,'チューリッヒ']]}]},
+{id:'us',zh:'美国',ja:'アメリカ',en:'United States',tz:-5,provs:[
+ {zh:'纽约州',ja:'ニューヨーク州',en:'New York',cities:[['纽约','New York',-74.01,-5,'ニューヨーク']]},{zh:'马萨诸塞州',ja:'マサチューセッツ州',en:'Massachusetts',cities:[['波士顿','Boston',-71.06,-5,'ボストン']]},
+ {zh:'伊利诺伊州',ja:'イリノイ州',en:'Illinois',cities:[['芝加哥','Chicago',-87.63,-6,'シカゴ']]},
+ {zh:'加利福尼亚州',ja:'カリフォルニア州',en:'California',cities:[['洛杉矶','Los Angeles',-118.24,-8,'ロサンゼルス'],['旧金山','San Francisco',-122.42,-8,'サンフランシスコ']]},
+ {zh:'华盛顿州',ja:'ワシントン州',en:'Washington',cities:[['西雅图','Seattle',-122.33,-8,'シアトル']]}]},
+{id:'ca',zh:'加拿大',ja:'カナダ',en:'Canada',tz:-5,provs:[{zh:'安大略省',ja:'オンタリオ州',en:'Ontario',cities:[['多伦多','Toronto',-79.38,-5,'トロント']]},{zh:'不列颠哥伦比亚省',ja:'ブリティッシュコロンビア州',en:'British Columbia',cities:[['温哥华','Vancouver',-123.12,-8,'バンクーバー']]}]},
+{id:'other',zh:'其他国家或地区',ja:'その他の国・地域',en:'Other country or region',tz:0,provs:[]}];
+const CITIES=[];GEO.forEach(c=>c.provs.forEach(p=>p.cities.forEach(x=>CITIES.push({g:c.id,zh:x[0],en:x[1],lon:x[2],tz:x[3]!==undefined?x[3]:c.tz,ja:x[4]||x[0],prov:p,country:c}))));
+const nm=o=>lang==='en'?o.en:lang==='ja'?(o.ja||o.zh):o.zh;
+
+const LANGS={
+zh:{
+ title:'八字命盘',sub:'输入出生信息，自动排盘并按传统规则分析',name:'姓名（可选）',gender:'性别',male:'男',female:'女',date:'出生日期',time:'出生时间（当地钟表时间）',
+ place:'出生地',manualOpt:'手动输入经度与时区',lon:'经度（东经为正）',tz:'时区（UTC＋）',dst:'出生时正在实行夏令时（＋1小时）',dstAuto:'中国1986至1991年的夏令时会自动校正。',
+ zi:'子时口径',ziA:'23点换日',ziB:'早晚子时',cast:'排盘',save:'保存命盘',saved:'已保存的命盘',load:'载入',del:'删除',savedName:'命盘',
+ png:'导出图片',svg:'导出矢量图',savedOk:'已导出',declined:'已取消导出',
+ errDate:'请填写有效的出生日期与时间。',errLon:'请填写有效的经度与时区。',
+ lyRoots:'通根',lyStem:'天干合冲',lyHe:'地支合会拱',lyCh:'地支冲刑害破',
+ lgStrong:'强根（禄旺）',lgWeak:'弱根（生、余气、墓）',lgHe:'合会',lgCh:'冲刑害破',
+ pos:['年','月','日','时'],pillar:['年柱','月柱','日柱','时柱'],flow:['大运','流年','流月','流日'],dm:'日主',
+ luckH:'大运',yearsH:'流年',ageU:'岁',nowTag:'当前',
+ tabs:['排盘与基础','命局结构','格局与用神','运势','专项分析','应用与方法'],
+ disc:'本工具依据传统命理规则自动计算，节气时刻采用天文近似算法，误差约在15分钟以内。所有结论仅供参考，不构成医疗、财务或任何专业建议。',
+ ten:['比肩','劫财','食神','伤官','偏财','正财','七杀','正官','偏印','正印'],tenS:['比肩','劫财','食神','伤官','偏财','正财','七杀','正官','偏印','正印'],
+ cat:['比劫','食伤','财星','官杀','印星'],el:['木','火','土','金','水'],
+ stage:['长生','沐浴','冠带','临官','帝旺','衰','病','死','墓','绝','胎','养'],
+ role:['用神','喜神','闲神','仇神','忌神'],rating:['大吉','吉','平','偏紧','不利'],
+ yy:['阳','阴'],animals:'鼠牛虎兔龙蛇马羊猴鸡狗猪'.split(''),
+ rel:{he:'合',chong:'冲',liuhe:'六合',sanhe:'三合',banhe:'半合',gong:'拱',sanhui:'三会',xing:'刑',zixing:'自刑',hai:'害',po:'破'},
+ dir:['东方','南方','中央','西方','北方'],color:['青、绿','红、紫','黄、棕','白、金、银','黑、深蓝'],
+ ind:['教育、出版、文化、林业、设计、人才发展','科技、互联网、能源、传媒、餐饮、演艺','地产、建筑、农业、仓储、中介','金融、法律、机械、汽车、制造、审计','物流、贸易、旅游、咨询、研究、信息'],
+ rad:['木、艹、竹，如林、森、荣、楠','火、灬、日，如炎、晨、昊、煜','土、山、石，如坤、岳、垚、培','金、钅、玉，如铭、锐、鑫、钧','氵、雨、冫，如泽、涵、润、霖'],
+ org:['肝胆、筋腱、眼睛','心、血脉、睡眠与神志','脾胃、消化','肺、呼吸、皮肤、大肠','肾、泌尿、骨骼、耳'],
+ catMean:['同辈、团队、合作伙伴','表达、创作、专业输出','收入、资产、经营','职位、规则、责任与压力','学习、导师、资历、平台与休养'],
+ act:['与可信赖的同伴协作，分担压力','通过作品与专业输出建立影响力','以务实的经营与理财积累资源','承担职责，在规则与组织中立身','持续学习、亲近导师、依托平台、保证休养'],
+ cls:['身弱','偏弱','中和','偏强','身强'],temp:['寒冷','偏寒','适中','偏暖','炎热'],dry:['湿重','偏湿','适中','偏燥','燥烈'],
+ ling:['得令（月令同气）','得生（月令生身）','失令'],
+ b_in:'输入时间',b_place:'出生地',b_dst:'夏令时',dstYes:'已校正（减1小时）',dstNo:'未实行',b_lon:'经度时差',b_eot:'均时差',minU:'{m}分钟',b_tst:'真太阳时',
+ b_p:'四柱',b_dm:'日主',dmV:'{s}（{yy}{e}）',b_zod:'生肖',b_li:'年界',liV:'以立春 {d} 为界',b_dir:'大运排法',fwd:'顺排',bwd:'逆排',b_qy:'起运',qyV:'{y}岁{m}个月起运，约{date}交运',
+ b_luck:'大运一览',c_idx:'序',c_p:'干支',c_years:'年份',c_age:'年龄',c_st:'天干十神',c_bt:'地支十神',c_rate:'评价',c_note:'要点',
+ s_str:'日主强弱',s_ling:'得令',s_di:'得地',diV:'强根{a}，弱根{b}',s_zhu:'得助',zhuV:'天干比劫与印星共{n}个',s_score:'同党力量',s_concl:'结论',
+ s_cong:'日主极弱且缺少生扶，存在从格的可能，需要专业判断。',
+ s_el:'五行统计',c_el:'五行',c_vis:'八字',c_hid:'含藏干',c_w:'力量',s_tg:'十神分布',c_tg:'十神',c_stem:'天干',
+ s_sr:'天干关系',s_br:'地支关系',none:'无',adjA:'（紧贴）',adjD:'（隔位）',s_roots:'天干通根',c_strong:'强根',c_weak:'弱根',
+ s_cli:'寒暖燥湿',c_temp:'寒暖',c_dry:'燥湿',c_need:'调候需要',notUrgent:'不急',
+ p_geju:'格局',p_ss:'天干势力',c_root:'根气',c_season:'得令',c_total:'合计',
+ p_res:'势力最强的天干为{s}（{tg}），定为{name}。',p_fb:'天干无明显得势者，以月令本气{s}（{tg}）定格，为{name}。',
+ p_yl:'月令法参考：月令本气为{s}（{tg}），{tou}。',tou:'已透出天干',notou:'未透出天干',
+ gname:'{tg}格',jianlu:'建禄格',yueren:'月刃格',bijie:'比劫格',
+ p_m:'三法取用',c_m:'方法',c_read:'判断',c_yong:'用神',c_basis:'依据',m:['扶抑','格局','调候'],
+ fyB:'日主{cls}，{cat}最重',fyN:'日主中和，从格局取用',gjB:'{name}，日主{cls}',thB:'{t}，{d}',
+ p_final:'综合用神',agree:['三法一致','两法一致','各法不一，以扶抑为主'],
+ p_roles:'喜忌体系',c_role:'角色',c_mean:'现实含义',
+ p_q:'用神品质',q_li:'有力程度',q_qing:'有情程度',liL:['有力','中等','无力'],liR:'强根{a}，弱根{b}{ling}',lingS:'，得令',
+ qingL:['贴身有情','隔位','不透干，藏于地支'],
+ p_flags:'格局清浊',f_mix:'官杀混杂：正官与七杀同透。',f_shg:'伤官见官：伤官与正官同透。',
+ f_xiaoA:'偏印与食神紧贴，有夺食之虑。',f_xiaoD:'偏印与食神同透但隔位，或有日主通关，影响有限。',f_cai:'财星与印星紧贴，有财坏印之象。',f_bj:'比劫与财星紧贴，有争财之象。',f_clean:'天干配置清纯，未见明显混杂。',
+ p_ver:'以经历验证用神',verT:'可对照以下年份的实际经历：天干为用神{u}的年份 {a}；天干为忌神{j}的年份 {b}。若前者普遍顺利、后者普遍吃力，即可确认用神。',
+ f_luck:'大运评价',f_years:'流年（未来12年）',f_months:'本年流月',c_month:'月份',c_start:'起始',f_inter:'岁运与原局作用',
+ inter:'{x}与{pos}支{b}{rel}',interS:'{x}与{pos}干{s}{rel}',interNone:'与原局无明显冲合',selLuck:'所选大运',selYear:'所选流年',
+ d_w:'财富',d_p:'官贵地位',d_k:'学业与精神',d_c:'职业取向',d_m:'婚姻情感',d_kid:'子女',d_h:'健康倾向',d_ss:'神煞',
+ star:'{cat}共{n}见（透干{t}），在本命中为{role}。',
+ wW:'日主偏弱，财多则担财吃力，宜以专业与声誉取财，慎用杠杆与担保。',wS:'日主有力，能够担财，可适度进取，同时分散风险。',wN:'日主中和，财运随岁运起伏，宜稳中求进。',
+ pSY:'官杀与印星并见，具备以资历与平台化压力为权威的结构。',pCG:'财星与官杀相连，经济与地位相互牵动。',pNo:'官杀不显，地位更多来自专业与个人能力，而非体制职位。',
+ kWC:'文昌见于{pos}柱，利学业与资格认证。',kHG:'华盖见于{pos}柱，好深思，对哲学、思想类领域有兴趣。',kYin:'印星为学识与支持之源，在本命中为{role}。',kOut:'食伤共{n}见，代表表达与输出能力。',
+ cGood:'宜：',cBad:'慎：',
+ mMale:'男命以财星为妻星，正财{a}见、偏财{b}见。',mFem:'女命以官杀为夫星，正官{a}见、七杀{b}见。',mPal:'夫妻宫为日支{b}，本气为{tg}。',mRels:'夫妻宫与原局的关系：{r}。',mNoRel:'夫妻宫与他支无冲刑，结构稳定。',
+ mPeach:'桃花见于{pos}柱。',mTime:'未来十年婚恋信号较明显的年份：{list}。',
+ kMale:'男命以官杀为子女星，共{n}见。',kFem:'女命以食伤为子女星，共{n}见。',kPal:'子女宫为时柱{p}。',kTime:'子女信号较明显的年份：{list}。',
+ kChk:['子女星全无','子女星被制尽','子女宫受冲刑'],yes:'是',no:'否',kConcl:'以上三项均未出现时，不属于传统意义上缺子或克子的结构。',
+ hT:'偏弱的五行：{w}，对应{o1}；偏旺的五行：{s}，对应{o2}。传统上偏弱之处宜调养，偏旺之处易过度消耗。此为象意参考，身体状况请以医生诊断为准。',
+ c_ss:'神煞',c_where:'位置',
+ ss:{tianyi:['天乙贵人','逢难有助，易得贵人'],wenchang:['文昌','聪慧，利学业与考试'],lu:['禄神','自身根基，衣食有靠'],yangren:['羊刃','刚强果决，需防冲动'],yima:['驿马','奔波迁移，利外出发展'],taohua:['桃花','人缘与异性缘'],huagai:['华盖','聪慧孤高，好哲思艺术'],jiang:['将星','统领掌权之象'],hongluan:['红鸾','婚恋喜庆'],tianxi:['天喜','喜庆之事'],guchen:['孤辰','性情独立'],guasu:['寡宿','亲缘偏淡']},
+ ssNone:'原局未见常用神煞。',reasons:{cai:'财星透出',spouse:'合夫妻宫',hong:'红鸾',xi:'天喜',peach:'桃花',star:'子女星透出',palace:'引动子女宫'},
+ a_boost:'补益方向',c_item:'项目',a_rows:['方位','颜色','行业','取名用字','现实做法'],
+ a_reg:'无悔策略',regT:'综合判断有利的五行为{a}，不利的五行为{b}。不论采用哪种方法，以下做法都成立：{acts}。以共识指导行动，以实际经历检验分歧。',
+ a_meth:'方法说明',methT:'排盘以节气定年月，日柱按儒略日推算，时柱按真太阳时定。格局按天干通根与得令的势力取最强者，用神并列扶抑、格局、调候三法。各法结论不同时，建议以过往经历的验证结果为准，而不是选择最吉利的解释。',
+ dateFmt:(y,m,d)=>`${y}年${m}月${d}日`,timeFmt:(h,mi)=>`${h}时${String(mi).padStart(2,'0')}分`,
+ cityGroups:{cn:'中国大陆',hk:'港澳台',as:'日本与亚洲',ot:'欧美与其他',mn:'其他'},manualCity:'手动输入',emptyHint:'请在左侧填写出生日期、时间与出生地，然后点击“排盘”。',countryL:'国家或地区',provL:'省份',cityL:'城市'
+},
+ja:{
+ title:'八字命盤',sub:'生年月日時と出生地から命盤を作成し、伝統的な規則で分析します',name:'名前（任意）',gender:'性別',male:'男性',female:'女性',date:'生年月日',time:'出生時刻（現地の時計時刻）',
+ place:'出生地',manualOpt:'経度とタイムゾーンを手入力',lon:'経度（東経を正）',tz:'タイムゾーン（UTC＋）',dst:'出生時に夏時間を実施（＋1時間）',dstAuto:'中国の1986〜1991年の夏時間は自動で補正します。',
+ zi:'子の刻の扱い',ziA:'23時で日替わり',ziB:'早子・夜子',cast:'命盤を作成',save:'命盤を保存',saved:'保存した命盤',load:'読込',del:'削除',savedName:'命盤',
+ png:'画像を書き出し',svg:'SVGを書き出し',savedOk:'書き出しました',declined:'書き出しを取り消しました',
+ errDate:'有効な生年月日と時刻を入力してください。',errLon:'有効な経度とタイムゾーンを入力してください。',
+ lyRoots:'通根',lyStem:'天干の合冲',lyHe:'地支の合・会・拱',lyCh:'地支の冲刑害破',
+ lgStrong:'強根（禄・旺）',lgWeak:'弱根（生・余気・墓）',lgHe:'合・会',lgCh:'冲刑害破',
+ pos:['年','月','日','時'],pillar:['年柱','月柱','日柱','時柱'],flow:['大運','流年','流月','流日'],dm:'日主',
+ luckH:'大運',yearsH:'流年',ageU:'歳',nowTag:'現在',
+ tabs:['命盤と基礎','命局の構造','格局と用神','運勢','分野別分析','活用と方法論'],
+ disc:'本ツールは伝統的な命理の規則に基づき自動計算しています。節気の時刻は天文学的な近似計算で、誤差はおよそ15分以内です。結論は参考情報であり、医療・財務その他の専門的助言ではありません。',
+ ten:['比肩','劫財','食神','傷官','偏財','正財','七殺','正官','偏印','印綬'],tenS:['比肩','劫財','食神','傷官','偏財','正財','七殺','正官','偏印','印綬'],
+ cat:['比劫','食傷','財星','官殺','印星'],el:['木','火','土','金','水'],
+ stage:['長生','沐浴','冠帯','建禄','帝旺','衰','病','死','墓','絶','胎','養'],
+ role:['用神','喜神','閑神','仇神','忌神'],rating:['大吉','吉','平','やや厳しい','不利'],
+ yy:['陽','陰'],animals:'鼠牛虎兎竜蛇馬羊猿鶏犬猪'.split(''),
+ rel:{he:'合',chong:'冲',liuhe:'六合',sanhe:'三合',banhe:'半合',gong:'拱',sanhui:'方合',xing:'刑',zixing:'自刑',hai:'害',po:'破'},
+ dir:['東','南','中央','西','北'],color:['青・緑','赤・紫','黄・茶','白・金・銀','黒・紺'],
+ ind:['教育・出版・文化・林業・デザイン・人材開発','テクノロジー・IT・エネルギー・メディア・飲食・芸能','不動産・建設・農業・倉庫・仲介','金融・法律・機械・自動車・製造・監査','物流・貿易・観光・コンサルティング・研究・情報'],
+ rad:['木・艹・竹の部首（林・森・栄・楠など）','火・灬・日の部首（炎・晨・昊・煜など）','土・山・石の部首（坤・岳・培など）','金・玉の部首（銘・鋭・鈞など）','氵・雨の部首（沢・涵・潤・霖など）'],
+ org:['肝・胆、筋、目','心臓・血脈、睡眠と精神','脾胃・消化','肺・呼吸器・皮膚・大腸','腎・泌尿器・骨・耳'],
+ catMean:['同僚・チーム・協力者','表現・創作・専門的アウトプット','収入・資産・経営','地位・規則・責任と重圧','学び・師・経歴・基盤と休養'],
+ act:['信頼できる仲間と協働し、負荷を分担する','作品や専門的アウトプットで影響力を築く','堅実な運営と資産管理で資源を蓄える','責任を引き受け、組織とルールの中で立つ','学び続け、師に近づき、基盤に頼り、休養を確保する'],
+ cls:['身弱','やや弱','中和','やや強','身強'],temp:['寒冷','やや寒','適中','やや暖','炎熱'],dry:['湿重','やや湿','適中','やや燥','燥烈'],
+ ling:['得令（月令と同気）','得生（月令が生ず）','失令'],
+ b_in:'入力時刻',b_place:'出生地',b_dst:'夏時間',dstYes:'補正済み（1時間戻す）',dstNo:'なし',b_lon:'経度差',b_eot:'均時差',minU:'{m}分',b_tst:'真太陽時',
+ b_p:'四柱',b_dm:'日主',dmV:'{s}（{yy}{e}）',b_zod:'生肖',b_li:'年の境界',liV:'立春（{d}）を境とする',b_dir:'大運の方向',fwd:'順行',bwd:'逆行',b_qy:'立運',qyV:'{y}歳{m}か月で立運、{date}頃に交運',
+ b_luck:'大運一覧',c_idx:'No.',c_p:'干支',c_years:'期間',c_age:'年齢',c_st:'天干通変',c_bt:'地支通変',c_rate:'評価',c_note:'ポイント',
+ s_str:'日主の強弱',s_ling:'得令',s_di:'得地',diV:'強根{a}、弱根{b}',s_zhu:'得助',zhuV:'天干の比劫・印星 計{n}',s_score:'同党の比率',s_concl:'結論',
+ s_cong:'日主が極めて弱く生扶もないため、従格の可能性があります。専門的な判断が必要です。',
+ s_el:'五行の集計',c_el:'五行',c_vis:'八字',c_hid:'蔵干込み',c_w:'力量',s_tg:'通変星の分布',c_tg:'通変星',c_stem:'天干',
+ s_sr:'天干の関係',s_br:'地支の関係',none:'なし',adjA:'（隣接）',adjD:'（隔位）',s_roots:'天干の通根',c_strong:'強根',c_weak:'弱根',
+ s_cli:'寒暖燥湿',c_temp:'寒暖',c_dry:'燥湿',c_need:'調候に必要',notUrgent:'急務なし',
+ p_geju:'格局',p_ss:'天干の勢力',c_root:'根',c_season:'得令',c_total:'合計',
+ p_res:'最も勢力の強い天干は{s}（{tg}）で、{name}と定めます。',p_fb:'目立って強い天干がないため、月令本気の{s}（{tg}）により{name}とします。',
+ p_yl:'月令法の参考：月令本気は{s}（{tg}）で、{tou}。',tou:'天干に透出しています',notou:'天干に透出していません',
+ gname:'{tg}格',jianlu:'建禄格',yueren:'月刃格',bijie:'比劫格',
+ p_m:'三法による用神',c_m:'方法',c_read:'判断',c_yong:'用神',c_basis:'根拠',m:['扶抑','格局','調候'],
+ fyB:'日主は{cls}、{cat}が最も重い',fyN:'日主は中和、格局に従う',gjB:'{name}、日主は{cls}',thB:'{t}・{d}',
+ p_final:'総合用神',agree:['三法一致','二法一致','各法が分かれるため扶抑を優先'],
+ p_roles:'喜忌の体系',c_role:'役割',c_mean:'現実的な意味',
+ p_q:'用神の質',q_li:'力量',q_qing:'有情',liL:['有力','中程度','無力'],liR:'強根{a}、弱根{b}{ling}',lingS:'、得令',
+ qingL:['日主に隣接し有情','隔位','透干せず地支に蔵する'],
+ p_flags:'格局の清濁',f_mix:'官殺混雑：正官と七殺が共に透干。',f_shg:'傷官見官：傷官と正官が共に透干。',
+ f_xiaoA:'偏印と食神が隣接し、奪食の恐れがあります。',f_xiaoD:'偏印と食神が共に透干するが隔位、または日主が通関し影響は限定的。',f_cai:'財星と印星が隣接し、財が印を壊す象。',f_bj:'比劫と財星が隣接し、財を争う象。',f_clean:'天干の配置は清く、目立った混雑はありません。',
+ p_ver:'経験による用神の検証',verT:'次の年の実際の経験と照らし合わせてください。天干が用神{u}の年：{a}。天干が忌神{j}の年：{b}。前者が概して順調で後者が概して苦しければ、用神を確認できます。',
+ f_luck:'大運の評価',f_years:'流年（今後12年）',f_months:'今年の流月',c_month:'月',c_start:'開始',f_inter:'歳運と原局の作用',
+ inter:'{x}と{pos}支{b}：{rel}',interS:'{x}と{pos}干{s}：{rel}',interNone:'原局との目立った冲合なし',selLuck:'選択中の大運',selYear:'選択中の流年',
+ d_w:'財運',d_p:'地位と官貴',d_k:'学業と精神',d_c:'職業の方向',d_m:'結婚と恋愛',d_kid:'子女',d_h:'健康の傾向',d_ss:'神煞',
+ star:'{cat}は計{n}（透干{t}）、本命では{role}です。',
+ wW:'日主がやや弱く、財が多いと担いきれません。専門性と信用で財を得て、レバレッジや保証は慎重に。',wS:'日主に力があり財を担えます。適度に攻めつつリスクを分散しましょう。',wN:'日主は中和で、財運は歳運に応じて上下します。堅実に進むのが良策です。',
+ pSY:'官殺と印星が揃い、経歴と基盤によって重圧を権威に変える構造があります。',pCG:'財星と官殺がつながり、経済と地位が連動します。',pNo:'官殺が目立たず、地位は組織の役職よりも専門性と個人の力から生まれます。',
+ kWC:'文昌が{pos}柱にあり、学業や資格に有利です。',kHG:'華蓋が{pos}柱にあり、思索を好み、哲学や思想に関心が向きます。',kYin:'印星は学識と支えの源で、本命では{role}です。',kOut:'食傷は計{n}で、表現とアウトプットの力を示します。',
+ cGood:'向く：',cBad:'慎重に：',
+ mMale:'男命は財星を妻星とし、正財{a}、偏財{b}。',mFem:'女命は官殺を夫星とし、正官{a}、七殺{b}。',mPal:'配偶者宮は日支{b}、本気は{tg}。',mRels:'配偶者宮と原局の関係：{r}。',mNoRel:'配偶者宮は他支と冲刑がなく、安定しています。',
+ mPeach:'桃花が{pos}柱にあります。',mTime:'今後10年で恋愛・結婚のサインが強い年：{list}。',
+ kMale:'男命は官殺を子女星とし、計{n}。',kFem:'女命は食傷を子女星とし、計{n}。',kPal:'子女宮は時柱{p}。',kTime:'子女のサインが強い年：{list}。',
+ kChk:['子女星がまったくない','子女星が制し尽くされる','子女宮が冲刑を受ける'],yes:'はい',no:'いいえ',kConcl:'三項目のいずれも該当しなければ、伝統的な意味での子縁の薄さや剋子の構造には当たりません。',
+ hT:'弱い五行：{w}（{o1}）。強い五行：{s}（{o2}）。伝統的には弱い所を養い、強い所の消耗に注意します。象意としての参考であり、体調は医師の診断を優先してください。',
+ c_ss:'神煞',c_where:'位置',
+ ss:{tianyi:['天乙貴人','困難時に助けが現れやすい'],wenchang:['文昌','聡明、学業と試験に有利'],lu:['禄神','自らの基盤、生活の安定'],yangren:['羊刃','剛毅果断、衝動に注意'],yima:['駅馬','移動や転居、遠方での発展'],taohua:['桃花','人気と異性縁'],huagai:['華蓋','聡明で孤高、哲学や芸術を好む'],jiang:['将星','統率と権限'],hongluan:['紅鸞','恋愛・結婚の慶事'],tianxi:['天喜','慶事'],guchen:['孤辰','独立心が強い'],guasu:['寡宿','縁が淡め']},
+ ssNone:'原局に主要な神煞は見当たりません。',reasons:{cai:'財星が透出',spouse:'配偶者宮と合',hong:'紅鸞',xi:'天喜',peach:'桃花',star:'子女星が透出',palace:'子女宮を引動'},
+ a_boost:'補う方向',c_item:'項目',a_rows:['方位','色','業種','名前の字','現実的な行動'],
+ a_reg:'後悔しない方針',regT:'総合的に有利な五行は{a}、不利な五行は{b}です。どの方法を採っても成り立つ行動：{acts}。共通点で行動し、相違は実際の経験で検証しましょう。',
+ a_meth:'方法について',methT:'年と月は節気、日柱はユリウス日、時柱は真太陽時で定めています。格局は天干の通根と得令から最も勢力のある干を取り、用神は扶抑・格局・調候の三法を並べています。結論が分かれる場合は、最も吉な解釈ではなく、過去の経験による検証を優先してください。',
+ dateFmt:(y,m,d)=>`${y}年${m}月${d}日`,timeFmt:(h,mi)=>`${h}時${String(mi).padStart(2,'0')}分`,
+ cityGroups:{cn:'中国大陸',hk:'香港・マカオ・台湾',as:'日本とアジア',ot:'欧米その他',mn:'その他'},manualCity:'手入力',emptyHint:'左側で生年月日・時刻・出生地を入力し、「命盤を作成」を押してください。',countryL:'国・地域',provL:'都道府県・省・州',cityL:'都市'
+},
+en:{
+ title:'BaZi Chart',sub:'Enter birth details to cast the Four Pillars and read them by traditional rules',name:'Name (optional)',gender:'Gender',male:'Male',female:'Female',date:'Birth date',time:'Birth time (local clock)',
+ place:'Birthplace',manualOpt:'Enter longitude and time zone',lon:'Longitude (east positive)',tz:'Time zone (UTC+)',dst:'Daylight saving was in effect (+1 h)',dstAuto:'China’s daylight saving from 1986 to 1991 is corrected automatically.',
+ zi:'Zi hour rule',ziA:'New day at 23:00',ziB:'Early and late Zi',cast:'Cast chart',save:'Save chart',saved:'Saved charts',load:'Load',del:'Delete',savedName:'Chart',
+ png:'Export image',svg:'Export SVG',savedOk:'Exported',declined:'Export cancelled',
+ errDate:'Enter a valid birth date and time.',errLon:'Enter a valid longitude and time zone.',
+ lyRoots:'Roots',lyStem:'Stem relations',lyHe:'Branch harmonies',lyCh:'Branch conflicts',
+ lgStrong:'Strong root',lgWeak:'Weak root',lgHe:'Harmony',lgCh:'Conflict',
+ pos:['Year','Month','Day','Hour'],pillar:['Year','Month','Day','Hour'],flow:['Decade','Year','Month','Day'],dm:'Self',
+ luckH:'Luck pillars',yearsH:'Annual pillars',ageU:'',nowTag:'Now',
+ tabs:['Chart basics','Structure','Pattern and useful god','Fortune','Life domains','Application and method'],
+ disc:'This tool applies traditional BaZi rules automatically. Solar terms use an astronomical approximation accurate to about 15 minutes. All readings are for reference only and are not medical, financial or other professional advice.',
+ ten:['Friend','Rob Wealth','Eating God','Hurting Officer','Indirect Wealth','Direct Wealth','Seven Killings','Direct Officer','Indirect Resource','Direct Resource'],
+ tenS:['Friend','Rob','Eating','Hurting','I.Wealth','D.Wealth','Killings','Officer','I.Res','D.Res'],
+ cat:['Companions','Output','Wealth','Power','Resource'],el:['Wood','Fire','Earth','Metal','Water'],
+ stage:['Birth','Bath','Cap','Prime','Peak','Decline','Sick','Death','Tomb','Void','Conceive','Nurture'],
+ role:['Useful','Favorable','Neutral','Adverse','Harmful'],rating:['Very good','Good','Even','Tight','Hard'],
+ yy:['Yang ','Yin '],animals:['Rat','Ox','Tiger','Rabbit','Dragon','Snake','Horse','Goat','Monkey','Rooster','Dog','Pig'],
+ rel:{he:'Combine',chong:'Clash',liuhe:'Six Harmony',sanhe:'Triple Harmony',banhe:'Half Harmony',gong:'Arch',sanhui:'Seasonal',xing:'Penalty',zixing:'Self-penalty',hai:'Harm',po:'Break'},
+ dir:['East','South','Center','West','North'],color:['green, teal','red, purple','yellow, brown','white, gold, silver','black, navy'],
+ ind:['education, publishing, culture, forestry, design, talent development','technology, internet, energy, media, food service, entertainment','real estate, construction, agriculture, warehousing, brokerage','finance, law, machinery, automotive, manufacturing, audit','logistics, trade, tourism, consulting, research, information'],
+ rad:['characters with 木, 艹 or 竹, such as 林 森 荣 楠','characters with 火, 灬 or 日, such as 炎 晨 昊 煜','characters with 土, 山 or 石, such as 坤 岳 培','characters with 金 or 玉, such as 铭 锐 钧','characters with 氵 or 雨, such as 泽 涵 润 霖'],
+ org:['liver, gallbladder, tendons, eyes','heart, circulation, sleep and mind','spleen, stomach, digestion','lungs, breathing, skin, large intestine','kidneys, urinary system, bones, ears'],
+ catMean:['peers, team, collaborators','expression, creation, professional output','income, assets, business','position, rules, responsibility and pressure','learning, mentors, credentials, platform and rest'],
+ act:['work with trusted peers and share the load','build influence through work products and expertise','grow resources through steady management','take on responsibility within organizations and rules','keep learning, stay close to mentors, lean on your platform and protect rest'],
+ cls:['Weak','Slightly weak','Balanced','Slightly strong','Strong'],temp:['Cold','Cool','Mild','Warm','Hot'],dry:['Damp','Moist','Even','Dry','Parched'],
+ ling:['In season','Supported by the season','Out of season'],
+ b_in:'Clock time',b_place:'Birthplace',b_dst:'Daylight saving',dstYes:'Corrected (minus 1 h)',dstNo:'None',b_lon:'Longitude offset',b_eot:'Equation of time',minU:'{m} min',b_tst:'True solar time',
+ b_p:'Four pillars',b_dm:'Day master',dmV:'{s} ({yy}{e})',b_zod:'Zodiac',b_li:'Year boundary',liV:'Year starts at Lichun, {d}',b_dir:'Luck direction',fwd:'Forward',bwd:'Backward',b_qy:'Luck begins',qyV:'At {y} years {m} months, around {date}',
+ b_luck:'Luck pillars',c_idx:'No.',c_p:'Pillar',c_years:'Years',c_age:'Age',c_st:'Stem god',c_bt:'Branch god',c_rate:'Rating',c_note:'Notes',
+ s_str:'Day master strength',s_ling:'Season',s_di:'Roots',diV:'{a} strong, {b} weak',s_zhu:'Support',zhuV:'{n} supporting stems',s_score:'Supporting share',s_concl:'Verdict',
+ s_cong:'The day master is extremely weak with no support; a follow pattern is possible and needs expert judgment.',
+ s_el:'Five elements',c_el:'Element',c_vis:'Visible',c_hid:'With hidden',c_w:'Weight',s_tg:'Ten gods',c_tg:'God',c_stem:'Stem',
+ s_sr:'Stem relations',s_br:'Branch relations',none:'None',adjA:' (adjacent)',adjD:' (distant)',s_roots:'Stem roots',c_strong:'Strong',c_weak:'Weak',
+ s_cli:'Climate',c_temp:'Temperature',c_dry:'Moisture',c_need:'Climate needs',notUrgent:'Not urgent',
+ p_geju:'Pattern',p_ss:'Stem strength',c_root:'Roots',c_season:'Season',c_total:'Total',
+ p_res:'The strongest stem is {s} ({tg}); the pattern is {name}.',p_fb:'No stem stands out, so the month branch’s main qi {s} ({tg}) sets the pattern: {name}.',
+ p_yl:'Month-branch check: its main qi is {s} ({tg}), which {tou}.',tou:'appears among the stems',notou:'stays hidden',
+ gname:'{tg} pattern',jianlu:'Prime pattern',yueren:'Blade pattern',bijie:'Companion pattern',
+ p_m:'Three methods',c_m:'Method',c_read:'Reading',c_yong:'Useful element',c_basis:'Basis',m:['Strength balance','Pattern','Climate'],
+ fyB:'Day master {cls}; {cat} dominates',fyN:'Balanced; follow the pattern',gjB:'{name}; day master {cls}',thB:'{t}, {d}',
+ p_final:'Combined useful element',agree:['All three agree','Two of three agree','Methods differ; strength balance prevails'],
+ p_roles:'Favorable and unfavorable',c_role:'Role',c_mean:'In real life',
+ p_q:'Quality of the useful element',q_li:'Strength',q_qing:'Placement',liL:['Strong','Moderate','Weak'],liR:'{a} strong, {b} weak roots{ling}',lingS:', in season',
+ qingL:['Next to the self','Distant','Hidden in branches'],
+ p_flags:'Purity checks',f_mix:'Officer and Seven Killings both show.',f_shg:'Hurting Officer meets Direct Officer.',
+ f_xiaoA:'Indirect Resource sits next to Eating God and may suppress it.',f_xiaoD:'Indirect Resource and Eating God both show but are apart or bridged; limited effect.',f_cai:'Wealth sits next to Resource and may damage it.',f_bj:'Companions sit next to Wealth and compete for it.',f_clean:'The stems are clean with no clear conflicts.',
+ p_ver:'Verify with your experience',verT:'Compare these years with what actually happened. Years with a {u} stem (useful): {a}. Years with a {j} stem (harmful): {b}. If the first group went generally well and the second felt harder, the useful element is confirmed.',
+ f_luck:'Luck pillar ratings',f_years:'Annual outlook (12 years)',f_months:'Months of this year',c_month:'Month',c_start:'Starts',f_inter:'Interactions with the natal chart',
+ inter:'{x} with {pos} branch {b}: {rel}',interS:'{x} with {pos} stem {s}: {rel}',interNone:'No notable interaction',selLuck:'Selected decade',selYear:'Selected year',
+ d_w:'Wealth',d_p:'Status and authority',d_k:'Learning and inner life',d_c:'Career direction',d_m:'Relationships',d_kid:'Children',d_h:'Health tendencies',d_ss:'Symbolic stars',
+ star:'{cat}: {n} in total ({t} visible); role in this chart: {role}.',
+ wW:'The day master is on the weak side, so heavy wealth is hard to carry. Earn through expertise and reputation; be careful with leverage and guarantees.',wS:'The day master can carry wealth; moderate ambition works, with diversification.',wN:'Balanced day master; wealth follows the luck cycles, so steady growth suits best.',
+ pSY:'Power and Resource appear together: pressure can turn into authority through credentials and a strong platform.',pCG:'Wealth connects to Power: money and status move together.',pNo:'Power stars are faint; status comes from expertise rather than formal rank.',
+ kWC:'Wenchang sits in the {pos} pillar: good for study and certifications.',kHG:'Huagai sits in the {pos} pillar: reflective, drawn to philosophy and ideas.',kYin:'Resource is the source of learning and support; here it is {role}.',kOut:'Output stars total {n}, showing expressive and productive ability.',
+ cGood:'Suits: ',cBad:'Be careful with: ',
+ mMale:'For a man, Wealth stands for the spouse: {a} Direct Wealth, {b} Indirect Wealth.',mFem:'For a woman, Power stands for the spouse: {a} Direct Officer, {b} Seven Killings.',mPal:'The spouse palace is the day branch {b}, main qi {tg}.',mRels:'Spouse palace relations: {r}.',mNoRel:'The spouse palace has no clashes or penalties; the structure is stable.',
+ mPeach:'Peach Blossom sits in the {pos} pillar.',mTime:'Years with stronger relationship signals in the next decade: {list}.',
+ kMale:'For a man, Power stands for children: {n} in total.',kFem:'For a woman, Output stands for children: {n} in total.',kPal:'The children palace is the hour pillar {p}.',kTime:'Years with stronger children signals: {list}.',
+ kChk:['No children star at all','Children star fully suppressed','Children palace clashed or penalized'],yes:'Yes',no:'No',kConcl:'If none of the three applies, the chart does not show the traditional pattern of lacking or harming children.',
+ hT:'Weaker elements: {w} ({o1}). Stronger elements: {s} ({o2}). Traditionally the weak areas need care and the strong areas risk overuse. This is symbolic reference only; rely on medical advice for your health.',
+ c_ss:'Star',c_where:'Where',
+ ss:{tianyi:['Nobleman','Help appears in difficulty'],wenchang:['Wenchang','Bright mind; study and exams'],lu:['Prosperity','Personal foundation'],yangren:['Blade','Drive; watch impulsiveness'],yima:['Travel Horse','Movement, working away'],taohua:['Peach Blossom','Charm and romance'],huagai:['Huagai','Reflective; philosophy and art'],jiang:['General Star','Command and authority'],hongluan:['Hongluan','Romance and celebrations'],tianxi:['Tianxi','Happy events'],guchen:['Lonely Star','Independent nature'],guasu:['Widow Star','Looser family ties']},
+ ssNone:'No common symbolic stars appear in the natal chart.',reasons:{cai:'Wealth stem',spouse:'combines spouse palace',hong:'Hongluan',xi:'Tianxi',peach:'Peach Blossom',star:'children star shows',palace:'activates children palace'},
+ a_boost:'Ways to strengthen',c_item:'Item',a_rows:['Direction','Colors','Industries','Name characters','In practice'],
+ a_reg:'No-regret moves',regT:'Overall favorable elements: {a}; unfavorable: {b}. These moves hold whichever method you follow: {acts}. Act on what the methods share, and test their differences against real experience.',
+ a_meth:'About the method',methT:'Year and month follow the solar terms, the day pillar follows the Julian day count, and the hour uses true solar time. The pattern takes the stem with the strongest roots and seasonal support; the useful element is shown under all three methods. When they disagree, prefer the reading your past experience confirms rather than the most auspicious one.',
+ dateFmt:(y,m,d)=>`${y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`,timeFmt:(h,mi)=>`${String(h).padStart(2,'0')}:${String(mi).padStart(2,'0')}`,
+ cityGroups:{cn:'Mainland China',hk:'Hong Kong, Macau, Taiwan',as:'Japan and Asia',ot:'Europe, Americas and more',mn:'Other'},manualCity:'Enter manually',emptyHint:'Enter the birth date, time and place on the left, then select “Cast chart”.',countryL:'Country or region',provL:'Province or state',cityL:'City'
+}};
+let lang='zh';
+try{const l=localStorage.getItem('bazi.lang');if(l&&LANGS[l])lang=l;}catch(e){}
+const L=()=>LANGS[lang];
+function T(k,v){let s=L()[k];if(s===undefined)s=LANGS.zh[k];if(s===undefined)return k;if(typeof s!=='string')return s;if(v)s=s.replace(/\{(\w+)\}/g,(m,p)=>v[p]!==undefined?v[p]:'');return s;}
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+/* ---------- astronomy ---------- */
+const DAY=86400000;
+const msToJd=ms=>ms/DAY+2440587.5, jdToMs=jd=>(jd-2440587.5)*DAY;
+function deltaT(y){if(y>=2005)return 64.7+0.3*(y-2005);if(y>=1986)return 54.9+0.52*(y-1986);if(y>=1950)return 29+0.72*(y-1950);return 24;}
+function sunLon(jd){const y=2000+(jd-2451545)/365.25,jde=jd+deltaT(y)/86400,T=(jde-2451545)/36525,r=Math.PI/180;
+  const L0=280.46646+36000.76983*T+0.0003032*T*T,M=357.52911+35999.05029*T-0.0001537*T*T;
+  const C=(1.914602-0.004817*T-0.000014*T*T)*Math.sin(M*r)+(0.019993-0.000101*T)*Math.sin(2*M*r)+0.000289*Math.sin(3*M*r);
+  const om=125.04-1934.136*T;return mod(L0+C-0.00569-0.00478*Math.sin(om*r),360);}
+function solveLon(target,jd){for(let i=0;i<12;i++){const d=mod(target-sunLon(jd)+180,360)-180;jd+=d/0.98565;if(Math.abs(d)<1e-7)break;}return jd;}
+const jdn=(y,m,d)=>Math.round(msToJd(Date.UTC(y,m-1,d,12)));
+const REF=jdn(1949,10,1);
+function lichunJd(Y){return solveLon(315,msToJd(Date.UTC(Y,1,4,0)));}
+function eot(ms){const d=new Date(ms),start=Date.UTC(d.getUTCFullYear(),0,0),N=Math.floor((ms-start)/DAY),Bv=2*Math.PI*(N-81)/364;return 9.87*Math.sin(2*Bv)-7.53*Math.cos(Bv)-1.5*Math.sin(Bv);}
+function yearPillarAt(jd,Y){const y=jd<lichunJd(Y)?Y-1:Y;return {s:mod(y-4,10),b:mod(y-4,12),y};}
+function monthPillarAt(jd,ys){const lam=sunLon(jd),k=Math.floor(mod(lam-315,360)/30);return {s:mod((ys%5)*2+2+k,10),b:(k+2)%12,k,lam};}
+function dayPillar(y,m,d){const i=mod(jdn(y,m,d)-REF,60);return {s:i%10,b:i%12};}
+const fmtD=ms=>{const d=new Date(ms);return L().dateFmt(d.getUTCFullYear(),d.getUTCMonth()+1,d.getUTCDate());};
+
+/* ---------- chart ---------- */
+function compute(inp){
+  const {y,m,d,hh,mi,tz,lon,cn,dstManual,zi,gender}=inp;
+  let dst=false;
+  if(cn&&CN_DST[y]){const r=CN_DST[y],t=Date.UTC(y,m-1,d,hh,mi);dst=t>=Date.UTC(y,r[0]-1,r[1],2)&&t<Date.UTC(y,r[2]-1,r[3],2);}
+  if(!cn&&dstManual)dst=true;
+  const utc=Date.UTC(y,m-1,d,hh,mi)-(tz*60+(dst?60:0))*60000, jd=msToJd(utc);
+  const E=eot(utc), tstMs=utc+lon*4*60000+E*60000, tst=new Date(tstMs);
+  const ty=tst.getUTCFullYear(),tm=tst.getUTCMonth()+1,td=tst.getUTCDate(),th=tst.getUTCHours()+tst.getUTCMinutes()/60;
+  const yp=yearPillarAt(jd,y), mp=monthPillarAt(jd,yp.s);
+  let dayDate=new Date(Date.UTC(ty,tm-1,td));
+  if(zi==='newday'&&th>=23)dayDate=new Date(dayDate.getTime()+DAY);
+  const dp=dayPillar(dayDate.getUTCFullYear(),dayDate.getUTCMonth()+1,dayDate.getUTCDate());
+  const hb=Math.floor((th+1)/2)%12, dsH=(zi==='late'&&th>=23)?(dp.s+1)%10:dp.s;
+  const hp={s:mod((dsH%5)*2+hb,10),b:hb};
+  const P=[{s:yp.s,b:yp.b},{s:mp.s,b:mp.b},{s:dp.s,b:dp.b},hp];
+  const dm=dp.s, dmE=SE(dm);
+  // luck
+  const prevL=mod(315+30*mp.k,360), off=mod(mp.lam-prevL,360);
+  const jdPrev=solveLon(prevL,jd-off/0.98565), jdNext=solveLon(mod(prevL+30,360),jd+(30-off)/0.98565);
+  const fwd=(yp.s%2===0)===(gender==='m');
+  const startYears=(fwd?jdNext-jd:jd-jdPrev)/3;
+  const startMs=utc+startYears*365.2422*DAY;
+  const by=new Date(utc), birthYF=by.getUTCFullYear()+(utc-Date.UTC(by.getUTCFullYear(),0,1))/(365.2422*DAY);
+  const mIdx=jz(mp.s,mp.b), luck=[];
+  for(let i=0;i<9;i++){const n=mod(mIdx+(fwd?i+1:-(i+1)),60),ys=birthYF+startYears+10*i;luck.push({s:n%10,b:n%12,startY:Math.floor(ys),age:Math.floor(startYears+10*i),ys});}
+  const c={inp,P,dm,dmE,dst,utc,jd,E,tstMs,lonCorr:lon*4-tz*60,lichun:jdToMs(lichunJd(y)),fwd,startYears,startMs,luck,birthYF,gender};
+  analyze(c);return c;
+}
+function rootsOf(s,P){const out=[];P.forEach((p,j)=>{const h=HID[p.b];if(SE(h[0])===SE(s))out.push({j,strong:true});else if(h.slice(1).some(x=>SE(x)===SE(s)))out.push({j,strong:false});});return out;}
+function analyze(c){
+  const {P,dm,dmE}=c;
+  // weights
+  const catW=[0,0,0,0,0], elW=[0,0,0,0,0], visCnt=[0,0,0,0,0], hidCnt=[0,0,0,0,0], tgVis=Array(10).fill(0), tgAll=Array(10).fill(0);
+  P.forEach((p,i)=>{visCnt[SE(p.s)]++;visCnt[BE[p.b]]++;hidCnt[SE(p.s)]++;elW[SE(p.s)]+=1;
+    if(i!==2){const g=tg(dm,p.s);catW[Math.floor(g/2)]+=1;tgVis[g]++;tgAll[g]++;}
+    HID[p.b].forEach((h,k)=>{hidCnt[SE(h)]++;const w=HW[k]*POSM[i];elW[SE(h)]+=w;const g=tg(dm,h);catW[Math.floor(g/2)]+=w;tgAll[g]++;});});
+  const tot=catW.reduce((a,b)=>a+b,0), ratio=(catW[0]+catW[4])/tot;
+  const cls=ratio<0.35?0:ratio<0.45?1:ratio<0.55?2:ratio<0.65?3:4;
+  const weak=ratio<0.5;
+  const mMain=BE[P[1].b], lingI=mMain===dmE?0:(mMain+1)%5===dmE?1:2;
+  const dmRoots=rootsOf(dm,P), helpers=[0,1,3].filter(i=>{const g=Math.floor(tg(dm,P[i].s)/2);return g===0||g===4;}).length;
+  const cong=ratio<0.12&&!dmRoots.some(r=>r.strong)&&helpers===0;
+  // relations
+  const stemRel=[];
+  for(let i=0;i<4;i++)for(let j=i+1;j<4;j++){const a=P[i].s,b=P[j].s;
+    if(Math.abs(a-b)===5)stemRel.push({t:'he',i,j,el:STEMHE_EL[Math.min(a,b)]});
+    if(Math.abs(a-b)===6&&Math.min(a,b)<4)stemRel.push({t:'chong',i,j});}
+  const brRel=branchRels(P.map(p=>p.b));
+  // roots
+  const roots=P.map(p=>rootsOf(p.s,P));
+  // climate
+  let Tm=0,Dr=0;const warmE=[0.2,1,0,-0.3,-1];
+  const dryB=[5,6,7,10],wetB=[0,11,4,1];
+  P.forEach(p=>{Tm+=warmE[SE(p.s)];Dr+=SE(p.s)===1?1:SE(p.s)===4?-1:0;
+    const b=p.b;Tm+=BE[b]===2?([7,10].includes(b)?0.5:-0.5):warmE[BE[b]];
+    Dr+=dryB.includes(b)?1:wetB.includes(b)?-1:0;
+    HID[b].slice(1).forEach(h=>{Tm+=warmE[SE(h)]*0.3;});});
+  const mb=P[1].b;
+  if([5,6,7].includes(mb))Tm+=2;if([11,0,1].includes(mb))Tm-=2;if(mb===2)Tm-=0.5;if([8,9,10].includes(mb))Dr+=1;
+  const tI=Tm<=-3?0:Tm<=-1.5?1:Tm<1.5?2:Tm<3?3:4, dI=Dr<=-3?0:Dr<=-1.5?1:Dr<1.5?2:Dr<3?3:4;
+  let tiao=null,tiaoUrg=false;
+  if(tI>=3||dI>=3){tiao=4;tiaoUrg=tI===4||dI===4||(tI>=3&&dI>=3);}
+  else if(tI<=1){tiao=1;tiaoUrg=tI===0;}
+  else if(dI<=1){tiao=1;tiaoUrg=dI===0;}
+  // pattern by stem strength
+  const ss=[0,1,3].map(i=>{const s=P[i].s,r=roots[i];let rs=0;r.forEach(x=>{rs+=(x.strong?3:1)*(x.j===1?2:1);});
+    const se=SE(s)===mMain?2:(mMain+1)%5===SE(s)?1:0;return {i,s,rs,se,tot:rs+se,g:tg(dm,s)};});
+  const best=ss.slice().sort((a,b)=>b.tot-a.tot||(a.i===1?-1:b.i===1?1:0))[0];
+  const mMainStem=HID[mb][0], mg=tg(dm,mMainStem);
+  let patG, patFrom;
+  if(best.tot>=2){patG=best.g;patFrom='stem';}else{patG=mg;patFrom='month';}
+  const patCat=Math.floor(patG/2);
+  let patName;
+  if(patCat===0){const st=stage(dm,mb);patName=st===3?T('jianlu'):st===4?T('yueren'):T('bijie');}
+  else patName=T('gname',{tg:L().ten[patG]});
+  const mTou=[0,1,3].some(i=>P[i].s===mMainStem);
+  // fuyi
+  const opp=[1,2,3].sort((a,b)=>catW[b]-catW[a]), same=[0,4].sort((a,b)=>catW[b]-catW[a]);
+  let fy=null;
+  if(cls<=1){const top=opp[0];const yc=top===2?0:4;fy={cat:yc,xi:yc===4?0:4,ji:top,chou:opp.slice(1),top};}
+  else if(cls>=3){const top=same[0];let yc,xi;
+    if(top===0){yc=catW[3]>0.5?3:1;xi=2;}else{yc=2;xi=1;}
+    fy={cat:yc,xi,ji:top,chou:[same[1]],top};}
+  // geju yong
+  const gw=weak;let gy;
+  switch(patCat){
+    case 3: gy=patG===6?(gw?4:1):(gw?4:2);break;
+    case 2: gy=gw?0:(catW[0]>catW[4]?3:1);break;
+    case 1: gy=gw?4:2;break;
+    case 4: gy=gw?(catW[3]>0.3?3:0):(catW[2]>0.3?2:1);break;
+    default: gy=catW[3]>0.3?3:catW[2]>0.3?2:1;
+  }
+  const catE=k=>(dmE+k)%5;
+  const fyE=fy?catE(fy.cat):catE(gy), gjE=catE(gy);
+  const votes=[0,0,0,0,0];votes[fyE]+=1;votes[gjE]+=1;if(tiao!==null)votes[tiao]+=tiaoUrg?1:0.5;
+  let fin=fyE;votes.forEach((v,e)=>{if(v>votes[fin]+1e-9)fin=e;});
+  const agreeN=[fyE,gjE,tiao].filter(e=>e===fin).length;
+  const agreeI=agreeN>=3?0:agreeN===2?1:2;
+  // roles: 0用 1喜 2闲 3仇 4忌
+  const role=[2,2,2,2,2];
+  if(fy&&fin===fyE){role[catE(fy.cat)]=0;role[catE(fy.xi)]=1;role[catE(fy.ji)]=4;fy.chou.forEach(k=>role[catE(k)]=3);}
+  else{role[fin]=0;role[gen(fin)]=1;role[ctrl(fin)]=4;role[gen(ctrl(fin))]=3;}
+  // quality
+  const U=fin;let sr=0,wr=0;P.forEach(p=>{const h=HID[p.b];if(SE(h[0])===U)sr++;else if(h.slice(1).some(x=>SE(x)===U))wr++;});
+  const uLing=mMain===U||(mMain+1)%5===U;
+  const liI=(sr>=1&&(uLing||sr>=2))?0:(sr>=1||wr>=1)?1:2;
+  const uPos=[0,1,3].filter(i=>SE(P[i].s)===U);
+  const qingI=uPos.some(i=>i===1||i===3)?0:uPos.length?1:2;
+  // flags
+  const vis=[0,1,3].map(i=>({i,g:tg(dm,P[i].s)}));const has=g=>vis.some(v=>v.g===g);
+  const adjPair=(fa,fb)=>vis.some(a=>fa(a.g)&&vis.some(b=>fb(b.g)&&Math.abs(a.i-b.i)===1&&a.i!==2&&b.i!==2));
+  const flags=[];
+  if(has(6)&&has(7))flags.push('f_mix');
+  if(has(3)&&has(7))flags.push('f_shg');
+  if(has(8)&&has(2))flags.push(adjPair(g=>g===8,g=>g===2)?'f_xiaoA':'f_xiaoD');
+  if(adjPair(g=>g===4||g===5,g=>g===8||g===9))flags.push('f_cai');
+  if(adjPair(g=>g===0||g===1,g=>g===4||g===5))flags.push('f_bj');
+  // shensha
+  const ssr=shensha(P,dm);
+  Object.assign(c,{catW,elW,visCnt,hidCnt,tgVis,tgAll,ratio,cls,weak,lingI,dmRoots,helpers,cong,stemRel,brRel,roots,
+    Tm,Dr,tI,dI,tiao,tiaoUrg,ss,best,patG,patFrom,patCat,patName,mMainStem,mg,mTou,fy,gy,fyE,gjE,fin,agreeI,role,
+    sr,wr,uLing,liI,qingI,uPos,flags,ssr});
+}
+function branchRels(bs){
+  const out=[],n=bs.length,set=new Set(bs);
+  const fullHe=SANHE.filter(g=>g.slice(0,3).every(x=>set.has(x))), fullHui=SANHUI.filter(g=>g.slice(0,3).every(x=>set.has(x)));
+  fullHe.forEach(g=>out.push({t:'sanhe',m:g.slice(0,3).map(x=>bs.indexOf(x)).sort(),el:g[3],chars:g.slice(0,3)}));
+  fullHui.forEach(g=>out.push({t:'sanhui',m:g.slice(0,3).map(x=>bs.indexOf(x)).sort(),el:g[3],chars:g.slice(0,3)}));
+  for(let i=0;i<n;i++)for(let j=i+1;j<n;j++){const a=bs[i],b=bs[j],k=pk(a,b),adj=j-i===1;
+    if(a===b){if([4,6,9,11].includes(a))out.push({t:'zixing',m:[i,j],chars:[a,b]});continue;}
+    if((a+b)%12===1)out.push({t:'liuhe',m:[i,j],el:HE6[k],chars:[a,b]});
+    if(Math.abs(a-b)===6)out.push({t:'chong',m:[i,j],chars:[a,b]});
+    if(XING.includes(k))out.push({t:'xing',m:[i,j],chars:[a,b]});
+    if((a+b)%12===7)out.push({t:'hai',m:[i,j],chars:[a,b]});
+    if(PO.includes(k))out.push({t:'po',m:[i,j],chars:[a,b]});
+    SANHE.forEach(g=>{if(fullHe.includes(g))return;const [sh,w,mu,el]=g;
+      if((pk(sh,w)===k)||(pk(w,mu)===k))out.push({t:'banhe',m:[i,j],el,chars:[a,b]});
+      else if(pk(sh,mu)===k&&adj&&!set.has(w))out.push({t:'gong',m:[i,j],mid:w,chars:[a,b]});});
+    SANHUI.forEach(g=>{if(fullHui.includes(g))return;const [x,y2,z]=g;if(pk(x,z)===k&&adj&&!set.has(y2))out.push({t:'gong',m:[i,j],mid:y2,chars:[a,b]});});
+  }
+  return out;
+}
+function shensha(P,dm){
+  const yb=P[0].b,db=P[2].b,ys=P[0].s,bs=P.map(p=>p.b);
+  const grp=b=>[[8,0,4],[2,6,10],[5,9,1],[11,3,7]].findIndex(g=>g.includes(b));
+  const TY={0:[1,7],4:[1,7],6:[1,7],1:[0,8],5:[0,8],2:[11,9],3:[11,9],7:[2,6],8:[3,5],9:[3,5]};
+  const WC=[5,6,8,9,8,9,11,0,2,3], LU=[2,3,5,6,5,6,8,9,11,0], YR={0:3,2:6,4:6,6:9,8:0};
+  const YM=[2,8,11,5], TH=[9,3,6,0], HG=[4,10,1,7], JX=[0,6,9,3];
+  const where=targets=>bs.map((b,i)=>targets.includes(b)?i:-1).filter(i=>i>=0);
+  const res=[];const add=(k,t)=>{const w=where(t);if(w.length)res.push({k,w});};
+  add('tianyi',[...new Set([...TY[dm],...TY[ys]])]);add('wenchang',[WC[dm]]);add('lu',[LU[dm]]);
+  if(YR[dm]!==undefined)add('yangren',[YR[dm]]);
+  add('yima',[...new Set([YM[grp(yb)],YM[grp(db)]])]);add('taohua',[...new Set([TH[grp(yb)],TH[grp(db)]])]);
+  add('huagai',[...new Set([HG[grp(yb)],HG[grp(db)]])]);add('jiang',[...new Set([JX[grp(yb)],JX[grp(db)]])]);
+  const hl=mod(3-yb,12);add('hongluan',[hl]);add('tianxi',[mod(hl+6,12)]);
+  const sea=[[11,0,1],[2,3,4],[5,6,7],[8,9,10]].findIndex(g=>g.includes(yb));const GC=[2,5,8,11],GS=[10,1,4,7];
+  add('guchen',[GC[sea]]);add('guasu',[GS[sea]]);
+  return res;
+}
+// interactions of an incoming pillar with natal
+function interact(x,c){
+  const out=[],P=c.P,bs=P.map(p=>p.b),R=L().rel;
+  P.forEach((p,i)=>{const a=x.b,b=p.b,k=pk(a,b),rs=[];
+    if(a!==b&&(a+b)%12===1)rs.push(R.liuhe);if(Math.abs(a-b)===6)rs.push(R.chong);
+    if(XING.includes(k)||(a===b&&[4,6,9,11].includes(a)))rs.push(R.xing);if(a!==b&&(a+b)%12===7)rs.push(R.hai);if(PO.includes(k))rs.push(R.po);
+    SANHE.forEach(g=>{const [sh,w,mu]=g;if(a!==b&&(pk(sh,w)===k||pk(w,mu)===k))rs.push(R.banhe);});
+    if(rs.length)out.push(T('inter',{x:B[a],pos:L().pos[i],b:B[b],rel:rs.join('、')}));});
+  SANHE.forEach(g=>{const tri=g.slice(0,3);if(tri.includes(x.b)){const others=tri.filter(t=>t!==x.b);if(others.every(o=>bs.includes(o)))out.push(tri.map(t=>B[t]).join('')+R.sanhe+L().el[g[3]]);}});
+  SANHUI.forEach(g=>{const tri=g.slice(0,3);if(tri.includes(x.b)){const others=tri.filter(t=>t!==x.b);if(others.every(o=>bs.includes(o)))out.push(tri.map(t=>B[t]).join('')+R.sanhui+L().el[g[3]]);}});
+  P.forEach((p,i)=>{const a=x.s,b=p.s;const rs=[];if(Math.abs(a-b)===5)rs.push(R.he);if(Math.abs(a-b)===6&&Math.min(a,b)<4)rs.push(R.chong);
+    if(rs.length)out.push(T('interS',{x:S[a],pos:L().pos[i],s:S[b],rel:rs.join('、')}));});
+  return out;
+}
+const RS=[2,1,0,-1,-2];
+function rateP(p,c){const es=RS[c.role[SE(p.s)]];
+  const h=HID[p.b];let num=0,den=0;h.forEach((x,k)=>{num+=RS[c.role[SE(x)]]*HW[k];den+=HW[k];});let eb=num/den;
+  if(c.tiao===4){if([0,11,4,1].includes(p.b))eb+=0.4;if([5,6,7,10].includes(p.b))eb-=0.4;}
+  if(c.tiao===1){if([5,6,7,10].includes(p.b))eb+=0.4;if([0,11,4,1].includes(p.b))eb-=0.4;}
+  const sc=0.5*es+0.5*eb;return {sc,i:sc>=1?0:sc>=0.35?1:sc>-0.15?2:sc>-0.9?3:4};}
+function flowNow(){const now=Date.now(),jd=msToJd(now),d=new Date();const yp=yearPillarAt(jd,d.getFullYear()),mp=monthPillarAt(jd,yp.s),dp=dayPillar(d.getFullYear(),d.getMonth()+1,d.getDate());return {yp,mp,dp,year:yp.y};}
+
+/* ---------- drawing ---------- */
+function isDark(){const t=document.documentElement.dataset.theme;return t==='dark'||(t!=='light'&&matchMedia('(prefers-color-scheme: dark)').matches);}
+function pal(){return isDark()?{ink:'#E9E3D7',muted:'#A49D91',line:'#3A3B40',tile:'#25262B',el:['#6FBF8E','#F07A6A','#C98A57','#E6CB4A','#7FB0E6'],he:'#72B6BA',ch:'#E57366',mu:'#8E887E',dark:true}
+  :{ink:'#23201C',muted:'#6C655B',line:'#D6CDBD',tile:'#FFFDF8',el:['#2F7A55','#C0392B','#87562A','#B8961A','#1E4C7A'],he:'#2F6F74',ch:'#A8322D',mu:'#9A9184',dark:false};}
+function mix(a,b,t){const pa=a.match(/\w\w/g).map(x=>parseInt(x,16)),pb=b.match(/\w\w/g).map(x=>parseInt(x,16));return '#'+pa.map((v,i)=>Math.round(v+(pb[i]-v)*t).toString(16).padStart(2,'0')).join('');}
+const ELI=[
+ c=>`<path fill="${c}" d="M12 2 5.5 10h3.1L4.5 15.5h6.1V22h2.8v-6.5h6.1L15.4 10h3.1z"/>`,
+ (c,bg)=>`<path fill="${c}" d="M12 2.2c1.9 3.6 6.3 6.2 6.3 11.4a6.3 6.3 0 0 1-12.6 0c0-3.1 1.6-5.2 3-7 .3 2.1 1.3 3.4 2.6 4.1-.5-3.1.1-5.9.7-8.5z"/><path fill="${bg}" opacity=".85" d="M12 13.2c1.4 1.5 2.5 2.6 2.5 4.3a2.5 2.5 0 0 1-5 0c0-1.6 1.1-2.7 2.5-4.3z"/>`,
+ c=>`<path fill="${c}" d="M1.5 20.5 8.5 8l4.1 6.6 3-4.4 6.9 10.3z"/>`,
+ (c,bg)=>`<path fill="${c}" d="M2.5 12.5c2.2.2 3.4-1.2 4.8-2.6.9-3 8.5-3 9.4 0 1.4 1.4 2.6 2.8 4.8 2.6l-1.9 6.2H4.4z"/><ellipse cx="12" cy="10.2" rx="2.6" ry="1" fill="${bg}" opacity=".6"/>`,
+ (c,bg)=>`<path fill="${c}" d="M12 2.5S5 10.4 5 15a7 7 0 0 0 14 0c0-4.6-7-12.5-7-12.5z"/><path d="M9 15.5a3 3 0 0 0 3 3" stroke="${bg}" stroke-width="1.4" fill="none" stroke-linecap="round" opacity=".8"/>`
+];
+const TGI=[
+ '<circle cx="8" cy="7" r="2.6"/><circle cx="16" cy="7" r="2.6"/><path d="M3.5 20v-3a4.5 4.5 0 0 1 9 0v3M11.5 20v-3a4.5 4.5 0 0 1 9 0v3"/>',
+ '<circle cx="9" cy="13" r="5.5"/><rect x="7.6" y="11.6" width="2.8" height="2.8"/><path d="M14.5 9.5 20 4M15.5 4H20v4.5"/>',
+ '<path d="M3.5 12.5h17a8.5 7 0 0 1-17 0z"/><path d="M13.5 3 18 11M17 2.5l3 7.5"/>',
+ '<path d="M18.5 3.5l2 2-9.5 9.5-2-2z"/><path d="M9 13c-2.6.3-4 2.2-4.2 4.6-.1 1.5-.9 2.3-2.3 2.9 3.3.6 7.6-.3 8.5-3.5"/>',
+ '<path d="M2.5 12.5c2.2.2 3.4-1.2 4.8-2.6.9-3 8.5-3 9.4 0 1.4 1.4 2.6 2.8 4.8 2.6l-1.9 6.2H4.4z"/>',
+ '<circle cx="12" cy="12" r="8.5"/><rect x="9.5" y="9.5" width="5" height="5"/>',
+ '<path d="M12 2.5l2 3v10h-4v-10z"/><path d="M7.5 15.5h9M12 15.5v5.5M10 21h4"/>',
+ '<path d="M7 15V9.5a5 5 0 0 1 10 0V15"/><path d="M2 12h5M17 12h5M5 15h14v3H5z"/>',
+ '<circle cx="8.6" cy="11" r="2.4"/><circle cx="15.4" cy="11" r="2.4"/><path d="M4.5 5.5l3 3M19.5 5.5l-3 3M5 11c0 6 3 9.5 7 9.5s7-3.5 7-9.5M11 15l1 1.4 1-1.4"/>',
+ '<rect x="5" y="12.5" width="14" height="8.5" rx="1"/><path d="M9 12.5V9a3 3 0 0 1 6 0v3.5M9 16.8h6"/>'
+];
+const DMI='<circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="2.6" fill="currentColor"/>';
+const icon=(inner,x,y,sz,col,stroke)=>`<g transform="translate(${x},${y}) scale(${sz/24})" ${stroke?`fill="none" stroke="${col}" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" color="${col}"`:''}>${inner}</g>`;
+const FB="Ma Shan Zheng,STKaiti,KaiTi,Kaiti SC,serif", FS="Noto Serif SC,Noto Serif JP,Songti SC,SimSun,serif";
+const NX=[90,190,290,390], LX=[520,600,680,760], W=800;
+let layers={roots:true,stem:true,he:true,ch:true};
+function tgLabel(x,y,g,p,isDm,small){
+  const txt=isDm?T('dm'):L().tenS[g], fs=small?11:12, w=txt.length*(lang==='en'?5.6:fs)+18;
+  const ic=isDm?DMI:TGI[g], col=isDm?p.ink:p.muted, x0=x-w/2;
+  return icon(ic,x0,y-8,15,col,true)+`<text x="${x0+18}" y="${y}" font-family="${FS}" font-size="${fs}" fill="${col}" dominant-baseline="central">${esc(txt)}</text>`;
+}
+function tile(x,y,sz,ch,e,p,fs){const c=p.el[e];
+  return `<rect x="${x-sz/2}" y="${y-sz/2}" width="${sz}" height="${sz}" rx="${sz*0.18}" fill="${c}" fill-opacity="${p.dark?0.14:0.09}" stroke="${c}" stroke-opacity=".45" stroke-width="1"/>`+
+  icon(ELI[e](c,p.dark?'#1D1E22':'#FFFDF8'),x+sz/2-15,y-sz/2+3,12,c)+
+  `<text x="${x}" y="${y+2}" text-anchor="middle" dominant-baseline="central" font-family="${FB}" font-size="${fs}" fill="${c}">${ch}</text>`;}
+function relLabel(r){const R=L().rel,el=r.el!==undefined?L().el[r.el]:'';const ch=r.chars.map(b=>B[b]).join('');
+  if(r.t==='gong')return lang==='en'?`${ch} ${R.gong} ${B[r.mid]}`:`${ch}${R.gong}${B[r.mid]}`;
+  if(lang==='zh')return ch+R[r.t]+el;if(lang==='ja')return ch+R[r.t]+(el?`（${el}）`:'');return `${ch} ${R[r.t]}${el?` (${el})`:''}`;}
+function svgChart(c,sel){
+  const p=pal(),P=c.P,dm=c.dm;
+  const t=Math.max(-1,Math.min(1,c.Tm/4));
+  const base=p.dark?(t>=0?mix('#1E1F22','#26201C',t):mix('#1E1F22','#182126',-t)):(t>=0?mix('#F4F0E7','#F6E6D2',t):mix('#F4F0E7','#E2ECEC',-t));
+  const U=c.fin, X=c.role.indexOf(1);
+  // bracket layout
+  const br=c.brRel.filter(r=>(['liuhe','sanhe','banhe','sanhui','gong'].includes(r.t)?layers.he:layers.ch));
+  const placed=[];br.forEach(r=>{const xs=r.m.map(i=>NX[i]),lo=Math.min(...xs),hi=Math.max(...xs),lab=relLabel(r),w=lab.length*(lang==='en'?6:12)+10,mid=(lo+hi)/2;
+    const a=Math.min(lo,mid-w/2)-4,b=Math.max(hi,mid+w/2)+4;let lv=0;while(placed.some(q=>q.lv===lv&&!(b<q.a||a>q.b)))lv++;placed.push({r,a,b,lv,lab,lo,hi,mid,xs});});
+  const nLv=placed.length?Math.max(...placed.map(q=>q.lv))+1:0, H=Math.max(450,432+nLv*30+22);
+  let o=`<svg id="chartsvg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(T('title'))}">`;
+  o+=`<defs><radialGradient id="w1" cx="12%" cy="16%" r="60%"><stop offset="0" stop-color="${p.el[U]}" stop-opacity="${p.dark?0.2:0.2}"/><stop offset="1" stop-color="${p.el[U]}" stop-opacity="0"/></radialGradient>`+
+    `<radialGradient id="w2" cx="92%" cy="90%" r="50%"><stop offset="0" stop-color="${p.el[X>=0?X:U]}" stop-opacity="${p.dark?0.14:0.13}"/><stop offset="1" stop-color="${p.el[X>=0?X:U]}" stop-opacity="0"/></radialGradient>`+
+    p.el.map((col,i)=>`<marker id="ar${i}" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M1 1 9 5 1 9z" fill="${col}"/></marker>`).join('')+`</defs>`;
+  o+=`<rect width="${W}" height="${H}" fill="${base}"/><rect width="${W}" height="${H}" fill="url(#w1)"/><rect width="${W}" height="${H}" fill="url(#w2)"/>`;
+  o+=`<g opacity="${p.dark?0.07:0.06}">${icon(ELI[U](p.el[U],base),W-200,H-210,190,p.el[U])}</g>`;
+  o+=`<rect x="8" y="8" width="${W-16}" height="${H-16}" rx="10" fill="none" stroke="${p.line}" stroke-width="1"/>`;
+  // info line
+  const i=c.inp, td=new Date(c.tstMs);
+  const info=[i.name||'',i.gender==='m'?T('male'):T('female'),L().dateFmt(i.y,i.m,i.d)+' '+L().timeFmt(i.hh,i.mi),T('b_tst')+' '+L().timeFmt(td.getUTCHours(),td.getUTCMinutes()),i.placeName].filter(Boolean).join('　');
+  o+=`<text x="24" y="30" font-family="${FS}" font-size="12" fill="${p.muted}">${esc(info)}</text>`;
+  o+=`<line x1="455" y1="44" x2="455" y2="${H-24}" stroke="${p.line}" stroke-dasharray="2 4"/>`;
+  // headers
+  NX.forEach((x,k)=>{o+=`<text x="${x}" y="54" text-anchor="middle" font-family="${FS}" font-size="13" fill="${p.ink}">${L().pillar[k]}</text>`;});
+  // stem arcs
+  if(layers.stem){const pl=[];c.stemRel.forEach(r=>{const a=NX[r.i],b=NX[r.j];let lv=0;while(pl.some(q=>q.lv===lv&&!(b<q.a||a>q.b)))lv++;pl.push({a,b,lv});
+    const col=r.t==='he'?p.he:p.ch,apex=112-11*lv,ctrl=2*apex-126,mid=(a+b)/2;
+    o+=`<path d="M${a} 126 Q${mid} ${ctrl} ${b} 126" fill="none" stroke="${col}" stroke-width="1.3" ${r.t==='chong'?'stroke-dasharray="5 3"':''}/>`;
+    const lab=L().rel[r.t]+(r.t==='he'&&lang!=='en'?L().el[r.el]:''),lw=lab.length*(lang==='en'?6.2:11)+10;
+    o+=`<rect x="${mid-lw/2}" y="${apex-8}" width="${lw}" height="16" rx="8" fill="${base}" stroke="${col}" stroke-width=".8"/><text x="${mid}" y="${apex}" text-anchor="middle" dominant-baseline="central" font-family="${FS}" font-size="11" fill="${col}">${esc(lab)}</text>`;});}
+  // natal pillars
+  P.forEach((pp,k)=>{const x=NX[k];
+    o+=tgLabel(x,82,tg(dm,pp.s),p,k===2);
+    o+=tile(x,160,64,S[pp.s],SE(pp.s),p,40);
+    o+=tile(x,278,64,B[pp.b],BE[pp.b],p,40);
+    HID[pp.b].forEach((h,r)=>{const y=336+r*22,g=tg(dm,h),col=p.el[SE(h)];
+      o+=`<text x="${x-32}" y="${y}" text-anchor="middle" dominant-baseline="central" font-family="${FB}" font-size="18" fill="${col}">${S[h]}</text>`;
+      o+=icon(TGI[g],x-21,y-7,14,p.muted,true);
+      o+=`<text x="${x-4}" y="${y}" dominant-baseline="central" font-family="${FS}" font-size="${lang==='en'?10.5:12}" fill="${p.muted}">${esc(L().tenS[g])}</text>`;});
+    o+=`<text x="${x}" y="412" text-anchor="middle" font-family="${FS}" font-size="12" fill="${p.ink}" opacity=".75">${L().stage[stage(dm,pp.b)]}</text>`;});
+  // roots
+  if(layers.roots){const inc=[0,0,0,0],tot=[0,0,0,0];c.roots.forEach(rs=>rs.forEach(r=>tot[r.j]++));
+    c.roots.forEach((rs,k)=>{rs.forEach((r,n)=>{const e=SE(P[k].s),col=p.el[e];const x1=NX[k]+(n-(rs.length-1)/2)*9,x2=NX[r.j]+(inc[r.j]-(tot[r.j]-1)/2)*9;inc[r.j]++;
+      o+=`<line x1="${x1}" y1="193" x2="${x2}" y2="243" stroke="${col}" stroke-width="${r.strong?1.7:1.3}" ${r.strong?'':'stroke-dasharray="4 3"'} marker-end="url(#ar${e})" opacity=".9"/>`;});});}
+  // brackets
+  placed.forEach(q=>{const r=q.r,y=440+q.lv*30,harm=['liuhe','sanhe','banhe','sanhui','gong'].includes(r.t);
+    const col=harm?p.he:(['chong','xing','zixing'].includes(r.t)?p.ch:p.mu),dash=r.t==='gong'||r.t==='xing'||r.t==='hai'||r.t==='po'?'stroke-dasharray="4 3"':r.t==='zixing'?'stroke-dasharray="1.5 3"':'';
+    let d=`M${q.lo} ${y} H${q.hi}`;q.xs.forEach(x=>{d+=` M${x} ${y-10} V${y}`;});
+    o+=`<path d="${d}" fill="none" stroke="${col}" stroke-width="1.4" ${dash}/>`;
+    o+=`<text x="${q.mid}" y="${y+13}" text-anchor="middle" font-family="${FS}" font-size="11.5" fill="${col}">${esc(q.lab)}</text>`;});
+  // luck columns
+  const fl=flowNow(), lp=c.luck[sel.luck], yp={s:mod(sel.year-4,10),b:mod(sel.year-4,12)};
+  const cols=[{p:lp,sub:lp.age+T('ageU')},{p:yp,sub:String(sel.year)},{p:{s:fl.mp.s,b:fl.mp.b},sub:T('nowTag')},{p:{s:fl.dp.s,b:fl.dp.b},sub:T('nowTag')}];
+  cols.forEach((cc,k)=>{const x=LX[k],pp=cc.p;
+    o+=`<text x="${x}" y="46" text-anchor="middle" font-family="${FS}" font-size="12.5" fill="${p.ink}">${L().flow[k]}</text><text x="${x}" y="62" text-anchor="middle" font-family="${FS}" font-size="11" fill="${p.muted}">${esc(cc.sub)}</text>`;
+    o+=tgLabel(x,82,tg(dm,pp.s),p,false,true);
+    o+=tile(x,160,50,S[pp.s],SE(pp.s),p,31);
+    o+=tile(x,278,50,B[pp.b],BE[pp.b],p,31);
+    const g=tg(dm,HID[pp.b][0]);o+=tgLabel(x,336,g,p,false,true);
+    o+=`<text x="${x}" y="412" text-anchor="middle" font-family="${FS}" font-size="12" fill="${p.ink}" opacity=".75">${L().stage[stage(dm,pp.b)]}</text>`;});
+  o+='</svg>';return o;
+}
+
+/* ---------- analysis tabs ---------- */
+Object.assign(LANGS.zh,{rng:'{a}至{b}',guan:'官杀透出',q_note:'依据',fin:'综合用神为{e}，{a}。',cur:'当前',strHigh:'偏旺',strLow:'偏弱'});
+Object.assign(LANGS.ja,{rng:'{a}〜{b}',guan:'官殺が透出',q_note:'根拠',fin:'総合用神は{e}（{a}）。',cur:'現在',strHigh:'強い',strLow:'弱い'});
+Object.assign(LANGS.en,{rng:'{a} to {b}',guan:'Power stem',q_note:'Basis',fin:'Combined useful element: {e} ({a}).',cur:'Now',strHigh:'Strong',strLow:'Weak'});
+LANGS.en.reasons.guan='Power stem';LANGS.zh.reasons.guan='官杀透出';LANGS.ja.reasons.guan='官殺が透出';
+const RC=['var(--r-good)','var(--r-ok)','var(--r-even)','var(--r-tight)','var(--r-bad)'];
+const chip=i=>`<span class="rate" style="color:${RC[i]}">${L().rating[i]}</span>`;
+const elc=e=>{const p=pal();return `<span style="color:${p.el[e]};white-space:nowrap">${L().el[e]}</span>`;};
+const gz=pp=>{const p=pal();return `<span class="gzc"><span style="color:${p.el[SE(pp.s)]}">${S[pp.s]}</span><span style="color:${p.el[BE[pp.b]]}">${B[pp.b]}</span></span>`;};
+const tbl=(head,rows,cls)=>`<div class="tblwrap"><table class="tbl"><thead><tr>${head.map(h=>`<th>${h}</th>`).join('')}</tr></thead><tbody>${rows.map(r=>`<tr${cls&&cls(r)?' class="now"':''}>${(r.cells||r).map(x=>`<td>${x}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
+const kv=rows=>`<div class="tblwrap"><table class="tbl"><tbody>${rows.map(r=>`<tr><th>${r[0]}</th><td>${r[1]}</td></tr>`).join('')}</tbody></table></div>`;
+const bar=(v,col)=>`<div class="bar"><i style="width:${Math.round(Math.min(1,v)*100)}%;background:${col}"></i></div>`;
+const catOf=(c,e)=>mod(e-c.dmE,5);
+const joinL=a=>a.join(lang==='en'?', ':'、');
+const par=x=>lang==='en'?` (${x})`:`（${x}）`, SEMI=()=>lang==='en'?'; ':'；', COL=()=>lang==='en'?': ':'：';
+function tabBasic(c){
+  const i=c.inp,td=new Date(c.tstMs),lc=new Date(c.lichun+i.tz*3600000),sm=new Date(c.startMs);
+  const yrs=Math.floor(c.startYears),mos=Math.floor((c.startYears-yrs)*12);
+  let h=`<h3>${T('tabs')[0]}</h3>`+kv([
+   [T('b_in'),L().dateFmt(i.y,i.m,i.d)+' '+L().timeFmt(i.hh,i.mi)],
+   [T('b_place'),esc(i.placeName)+par(`${i.lon.toFixed(2)}°${lang==='en'?', ':'，'}UTC${i.tz>=0?'+':''}${i.tz}`)],
+   [T('b_dst'),c.dst?T('dstYes'):T('dstNo')],
+   [T('b_lon'),T('minU',{m:(c.lonCorr>0?'+':'')+c.lonCorr.toFixed(1)})],
+   [T('b_eot'),T('minU',{m:(c.E>0?'+':'')+c.E.toFixed(1)})],
+   [T('b_tst'),L().dateFmt(td.getUTCFullYear(),td.getUTCMonth()+1,td.getUTCDate())+' '+L().timeFmt(td.getUTCHours(),td.getUTCMinutes())],
+   [T('b_p'),c.P.map(gz).join('　')],
+   [T('b_dm'),T('dmV',{s:S[c.dm],yy:L().yy[c.dm%2],e:L().el[c.dmE]})],
+   [T('b_zod'),L().animals[c.P[0].b]],
+   [T('b_li'),T('liV',{d:L().dateFmt(lc.getUTCFullYear(),lc.getUTCMonth()+1,lc.getUTCDate())+' '+L().timeFmt(lc.getUTCHours(),lc.getUTCMinutes())})],
+   [T('b_dir'),c.fwd?T('fwd'):T('bwd')],
+   [T('b_qy'),T('qyV',{y:yrs,m:mos,date:L().dateFmt(sm.getUTCFullYear(),sm.getUTCMonth()+1,sm.getUTCDate())})]]);
+  h+=`<h3>${T('b_luck')}</h3>`+tbl([T('c_idx'),T('c_p'),T('c_years'),T('c_age'),T('c_st'),T('c_bt')],
+    c.luck.map((l,k)=>[k+1,gz(l),T('rng',{a:l.startY,b:l.startY+9}),T('rng',{a:l.age,b:l.age+9}),L().ten[tg(c.dm,l.s)],L().ten[tg(c.dm,HID[l.b][0])]]));
+  return h;
+}
+function tabStructure(c){
+  const p=pal(),R=L().rel;
+  let h=`<h3>${T('s_str')}</h3>`+kv([
+   [T('s_ling'),L().ling[c.lingI]+par(B[c.P[1].b])],
+   [T('s_di'),T('diV',{a:c.dmRoots.filter(r=>r.strong).length,b:c.dmRoots.filter(r=>!r.strong).length})],
+   [T('s_zhu'),T('zhuV',{n:c.helpers})],
+   [T('s_score'),`<div style="display:flex;align-items:center;gap:10px">${bar(c.ratio,p.el[c.dmE])}<span>${Math.round(c.ratio*100)}%</span></div>`],
+   [T('s_concl'),`<strong>${L().cls[c.cls]}</strong>`+(c.cong?`<div class="hint">${T('s_cong')}</div>`:'')]]);
+  const ew=c.elW.reduce((a,b)=>a+b,0);
+  h+=`<h3>${T('s_el')}</h3>`+tbl([T('c_el'),T('c_vis'),T('c_hid'),T('c_w')],[0,1,2,3,4].map(e=>[`<span style="display:inline-flex;align-items:center;gap:6px"><svg width="16" height="16" viewBox="0 0 24 24">${ELI[e](p.el[e],p.dark?'#1D1E22':'#FFFDF8')}</svg>${elc(e)}</span>`,c.visCnt[e],c.hidCnt[e],`<div style="display:flex;align-items:center;gap:8px">${bar(c.elW[e]/ew,p.el[e])}<span>${Math.round(c.elW[e]/ew*100)}%</span></div>`]));
+  h+=`<h3>${T('s_tg')}</h3><div class="cols2">`+[0,5].map(st=>tbl([T('c_tg'),T('c_stem'),T('c_hid')],[0,1,2,3,4].map(k=>{const g=st+k;return [`<span style="display:inline-flex;align-items:center;gap:6px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">${TGI[g]}</svg>${L().ten[g]}</span>`,c.tgVis[g],c.tgAll[g]];}))).join('')+`</div>`;
+  const sr=c.stemRel.map(r=>`${L().pos[r.i]}${S[c.P[r.i].s]}　${L().pos[r.j]}${S[c.P[r.j].s]}：${R[r.t]}${r.t==='he'?L().el[r.el]:''}${r.j-r.i===1?T('adjA'):T('adjD')}`);
+  const brl=c.brRel.map(r=>`${relLabel(r)}　${r.m.map(k=>L().pos[k]).join(lang==='en'?'/':'')}${r.m.length===2?(r.m[1]-r.m[0]===1?T('adjA'):T('adjD')):''}`);
+  h+=`<div class="cols2"><div><h3>${T('s_sr')}</h3>${sr.length?sr.map(x=>`<p>${x}</p>`).join(''):`<p>${T('none')}</p>`}</div><div><h3>${T('s_br')}</h3>${brl.length?brl.map(x=>`<p>${x}</p>`).join(''):`<p>${T('none')}</p>`}</div></div>`;
+  h+=`<h3>${T('s_roots')}</h3>`+tbl([T('c_stem'),T('c_strong'),T('c_weak')],c.P.map((pp,k)=>{const rs=c.roots[k],f=st=>rs.filter(r=>r.strong===st).map(r=>`${L().pos[r.j]}${B[c.P[r.j].b]}${par(L().stage[stage(pp.s,c.P[r.j].b)])}`).join(lang==='en'?', ':'、')||T('none');
+    return [`${L().pos[k]} <span class="gzc" style="color:${p.el[SE(pp.s)]}">${S[pp.s]}</span>`,f(true),f(false)];}));
+  h+=`<h3>${T('s_cli')}</h3>`+kv([[T('c_temp'),L().temp[c.tI]],[T('c_dry'),L().dry[c.dI]],[T('c_need'),c.tiao===null?T('notUrgent'):elc(c.tiao)]]);
+  return h;
+}
+function tabPattern(c){
+  const p=pal(),dm=c.dm;
+  let h=`<h3>${T('p_ss')}</h3>`+tbl([T('c_stem'),T('c_tg'),T('c_root'),T('c_season'),T('c_total')],c.ss.map(x=>[`${L().pos[x.i]} <span class="gzc" style="color:${p.el[SE(x.s)]}">${S[x.s]}</span>`,L().ten[x.g],x.rs,x.se,`<strong>${x.tot}</strong>`]));
+  h+=`<h3>${T('p_geju')}</h3><p>`+(c.patFrom==='stem'?T('p_res',{s:S[c.best.s],tg:L().ten[c.best.g],name:c.patName}):T('p_fb',{s:S[c.mMainStem],tg:L().ten[c.mg],name:c.patName}))+`</p>`;
+  h+=`<p class="hint">${T('p_yl',{s:S[c.mMainStem],tg:L().ten[c.mg],tou:c.mTou?T('tou'):T('notou')})}</p>`;
+  const clsN=L().cls[c.cls];
+  const fyBasis=c.fy?T('fyB',{cls:clsN,cat:L().cat[c.fy.top]}):T('fyN');
+  h+=`<h3>${T('p_m')}</h3>`+tbl([T('c_m'),T('c_read'),T('c_yong'),T('c_basis')],[
+    [L().m[0],clsN,elc(c.fyE),fyBasis],[L().m[1],c.patName,elc(c.gjE),T('gjB',{name:c.patName,cls:clsN})],
+    [L().m[2],L().temp[c.tI]+(lang==='en'?', ':'、')+L().dry[c.dI],c.tiao===null?T('notUrgent'):elc(c.tiao),T('thB',{t:L().temp[c.tI],d:L().dry[c.dI]})]]);
+  h+=`<p><strong>${T('fin',{e:elc(c.fin),a:L().agree[c.agreeI]})}</strong></p>`;
+  const order=[0,1,2,3,4].sort((a,b)=>c.role[a]-c.role[b]);
+  h+=`<h3>${T('p_roles')}</h3>`+tbl([T('c_el'),T('c_tg'),T('c_role'),T('c_mean')],order.map(e=>[elc(e),L().cat[catOf(c,e)],`<span class="rate" style="color:${RC[[0,1,2,3,4][c.role[e]]]}">${L().role[c.role[e]]}</span>`,L().catMean[catOf(c,e)]]));
+  h+=`<h3>${T('p_q')}</h3>`+kv([[T('q_li'),`${L().liL[c.liI]}　<span class="hint">${T('liR',{a:c.sr,b:c.wr,ling:c.uLing?T('lingS'):''})}</span>`],[T('q_qing'),L().qingL[c.qingI]]]);
+  h+=`<h3>${T('p_flags')}</h3>`+(c.flags.length?c.flags.map(f=>`<p>${T(f)}</p>`).join(''):`<p>${T('f_clean')}</p>`);
+  const cy=new Date().getFullYear(),ys=[];for(let y=cy-16;y<cy;y++)ys.push(y);
+  const ji=c.role.indexOf(4);
+  const a=ys.filter(y=>SE(mod(y-4,10))===c.fin),b=ys.filter(y=>SE(mod(y-4,10))===ji);
+  h+=`<h3>${T('p_ver')}</h3><p>${T('verT',{u:L().el[c.fin],a:joinL(a.map(String)),j:L().el[ji],b:joinL(b.map(String))})}</p>`;
+  return h;
+}
+function monthsOf(year){const lc=lichunJd(year),ys=mod(year-4,10),out=[];for(let k=0;k<12;k++){const jd=solveLon(mod(315+30*k,360),lc+k*30.44);out.push({s:mod((ys%5)*2+2+k,10),b:(k+2)%12,ms:jdToMs(jd)});}return out;}
+function tabFortune(c,sel){
+  const cy=new Date().getFullYear(),now=Date.now();
+  let h=`<h3>${T('f_luck')}</h3>`+tbl([T('c_p'),T('c_years'),T('c_age'),T('c_st'),T('c_bt'),T('c_rate'),T('c_note')],c.luck.map((l,k)=>{const r=rateP(l,c),it=interact(l,c);
+    return {cells:[gz(l),T('rng',{a:l.startY,b:l.startY+9}),T('rng',{a:l.age,b:l.age+9}),L().ten[tg(c.dm,l.s)],L().ten[tg(c.dm,HID[l.b][0])],chip(r.i),`<span class="hint">${it.slice(0,3).join(SEMI())||T('interNone')}</span>`],cur:cy>=l.startY&&cy<l.startY+10};}),r=>r.cur);
+  const yrs=[];for(let y=cy;y<cy+12;y++)yrs.push(y);
+  h+=`<h3>${T('f_years')}</h3>`+tbl([T('c_years'),T('c_p'),T('c_rate'),T('c_note')],yrs.map(y=>{const pp={s:mod(y-4,10),b:mod(y-4,12)},r=rateP(pp,c),it=interact(pp,c);return {cells:[y,gz(pp),chip(r.i),`<span class="hint">${it.slice(0,3).join(SEMI())||T('interNone')}</span>`],cur:y===cy};}),r=>r.cur);
+  const fl=flowNow(),ms=monthsOf(fl.year);
+  h+=`<h3>${T('f_months')}</h3>`+tbl([T('c_month'),T('c_p'),T('c_start'),T('c_rate')],ms.map((m,k)=>{const d=new Date(m.ms+c.inp.tz*3600000),r=rateP(m,c);const next=k<11?ms[k+1].ms:Infinity;
+    return {cells:[k+1,gz(m),L().dateFmt(d.getUTCFullYear(),d.getUTCMonth()+1,d.getUTCDate()),chip(r.i)],cur:now>=m.ms&&now<next};}),r=>r.cur);
+  const lp=c.luck[sel.luck],yp={s:mod(sel.year-4,10),b:mod(sel.year-4,12)};
+  h+=`<h3>${T('f_inter')}</h3>`+kv([[`${T('selLuck')} ${gz(lp)}`,interact(lp,c).join('<br>')||T('interNone')],[`${T('selYear')} ${sel.year} ${gz(yp)}`,interact(yp,c).join('<br>')||T('interNone')]]);
+  return h;
+}
+function tabDomains(c){
+  const dm=c.dm,P=c.P,cnt=k=>c.tgAll[2*k]+c.tgAll[2*k+1],vis=k=>c.tgVis[2*k]+c.tgVis[2*k+1],ce=k=>(c.dmE+k)%5;
+  const star=k=>T('star',{cat:L().cat[k],n:cnt(k),t:vis(k),role:L().role[c.role[ce(k)]]});
+  const ss=key=>c.ssr.find(x=>x.k===key);
+  let h=`<h3>${T('d_w')}</h3><p>${star(2)}</p><p>${c.cls<=1?T('wW'):c.cls>=3?T('wS'):T('wN')}</p>`;
+  h+=`<h3>${T('d_p')}</h3><p>${star(3)}</p>`;
+  if(cnt(3)===0)h+=`<p>${T('pNo')}</p>`;else{if(cnt(4)>0)h+=`<p>${T('pSY')}</p>`;if(cnt(2)>0&&vis(2)+vis(3)>0)h+=`<p>${T('pCG')}</p>`;}
+  ['jiang','tianyi'].forEach(k=>{const x=ss(k);if(x)h+=`<p>${L().ss[k][0]}${COL()}${joinL(x.w.map(i=>L().pos[i]))}${par(L().ss[k][1])}</p>`;});
+  h+=`<h3>${T('d_k')}</h3><p>${star(4)}</p><p>${T('kOut',{n:cnt(1)})}</p>`;
+  const wc=ss('wenchang'),hg=ss('huagai');if(wc)h+=`<p>${T('kWC',{pos:joinL(wc.w.map(i=>L().pos[i]))})}</p>`;if(hg)h+=`<p>${T('kHG',{pos:joinL(hg.w.map(i=>L().pos[i]))})}</p>`;
+  const good=[0,1,2,3,4].filter(e=>c.role[e]<=1).sort((a,b)=>c.role[a]-c.role[b]),bad=[0,1,2,3,4].filter(e=>c.role[e]===4);
+  h+=`<h3>${T('d_c')}</h3><p>${T('cGood')}${good.map(e=>`${L().ind[e]}${par(elc(e))}`).join(SEMI())}</p><p>${T('cBad')}${bad.map(e=>`${L().ind[e]}${par(elc(e))}`).join(SEMI())}</p>`;
+  // marriage
+  const male=c.gender==='m',db=P[2].b,cy=new Date().getFullYear();
+  h+=`<h3>${T('d_m')}</h3><p>${male?T('mMale',{a:c.tgAll[5],b:c.tgAll[4]}):T('mFem',{a:c.tgAll[7],b:c.tgAll[6]})}</p>`;
+  h+=`<p>${T('mPal',{b:B[db],tg:L().ten[tg(dm,HID[db][0])]})}</p>`;
+  const pr=c.brRel.filter(r=>r.m.includes(2));h+=`<p>${pr.length?T('mRels',{r:joinL(pr.map(relLabel))}):T('mNoRel')}</p>`;
+  const th=ss('taohua');if(th)h+=`<p>${T('mPeach',{pos:joinL(th.w.map(i=>L().pos[i]))})}</p>`;
+  const hl=mod(3-P[0].b,12),txL=mod(hl+6,12),grp=b=>[[8,0,4],[2,6,10],[5,9,1],[11,3,7]].findIndex(g=>g.includes(b)),thB=[9,3,6,0];
+  const mY=[];for(let y=cy;y<cy+10;y++){const ys=mod(y-4,10),yb=mod(y-4,12),rs=[];
+    if(male&&catOf(c,SE(ys))===2)rs.push(L().reasons.cai);if(!male&&catOf(c,SE(ys))===3)rs.push(L().reasons.guan);
+    if((yb+db)%12===1&&yb!==db)rs.push(L().reasons.spouse);if(yb===hl)rs.push(L().reasons.hong);if(yb===txL)rs.push(L().reasons.xi);
+    if(yb===thB[grp(P[0].b)]||yb===thB[grp(db)])rs.push(L().reasons.peach);
+    if(rs.length>=2||(rs.length&&rs.includes(L().reasons.spouse)))mY.push(`${y}${par(joinL(rs))}`);}
+  if(mY.length)h+=`<p>${T('mTime',{list:mY.join(SEMI())})}</p>`;
+  // children
+  const kc=male?3:1,hb=P[3].b;
+  h+=`<h3>${T('d_kid')}</h3><p>${male?T('kMale',{n:cnt(3)}):T('kFem',{n:cnt(1)})}</p><p>${T('kPal',{p:gz(P[3])})}</p>`;
+  const kY=[];for(let y=cy;y<cy+10;y++){const ys=mod(y-4,10),yb=mod(y-4,12),rs=[];
+    if(catOf(c,SE(ys))===kc)rs.push(L().reasons.star);if(((yb+hb)%12===1&&yb!==hb)||yb===hb)rs.push(L().reasons.palace);
+    if(catOf(c,BE[yb])===kc&&!rs.includes(L().reasons.star))rs.push(L().reasons.star);
+    if(rs.length)kY.push(`${y}${par(joinL(rs))}`);}
+  if(kY.length)h+=`<p>${T('kTime',{list:kY.join(SEMI())})}</p>`;
+  const kw=c.catW[kc],ctrlW=c.catW[male?1:4];
+  const chk=[cnt(kc)===0,cnt(kc)>0&&kw<0.6&&ctrlW>=3,c.brRel.some(r=>r.m.includes(3)&&['chong','xing'].includes(r.t))];
+  h+=tbl([T('c_item'),''],L().kChk.map((t,k)=>[t,chk[k]?`<strong>${T('yes')}</strong>`:T('no')]));
+  if(!chk.some(Boolean))h+=`<p>${T('kConcl')}</p>`;
+  // health
+  const ew=c.elW,mx=Math.max(...ew),mn=Math.min(...ew),hi=[0,1,2,3,4].filter(e=>ew[e]>=mx*0.999),lo=[0,1,2,3,4].filter(e=>ew[e]<=mn*1.001+0.01);
+  h+=`<h3>${T('d_h')}</h3><p>${T('hT',{w:joinL(lo.map(elc)),o1:lo.map(e=>L().org[e]).join(SEMI()),s:joinL(hi.map(elc)),o2:hi.map(e=>L().org[e]).join(SEMI())})}</p>`;
+  h+=`<h3>${T('d_ss')}</h3>`+(c.ssr.length?tbl([T('c_ss'),T('c_where'),T('c_mean')],c.ssr.map(x=>[L().ss[x.k][0],joinL(x.w.map(i=>L().pos[i]+B[P[i].b])),L().ss[x.k][1]])):`<p>${T('ssNone')}</p>`);
+  return h;
+}
+function tabApply(c){
+  const U=c.fin,X=c.role.indexOf(1),cols=[U,X].filter(e=>e>=0);
+  let h=`<h3>${T('a_boost')}</h3>`+tbl([T('c_item'),...cols.map(e=>`${L().role[c.role[e]]}　${elc(e)}`)],[
+    [L().a_rows[0],...cols.map(e=>L().dir[e])],[L().a_rows[1],...cols.map(e=>L().color[e])],[L().a_rows[2],...cols.map(e=>L().ind[e])],
+    [L().a_rows[3],...cols.map(e=>L().rad[e])],[L().a_rows[4],...cols.map(e=>L().act[catOf(c,e)])]]);
+  const good=[0,1,2,3,4].filter(e=>c.role[e]<=1),bad=[0,1,2,3,4].filter(e=>c.role[e]>=3);
+  h+=`<h3>${T('a_reg')}</h3><p>${T('regT',{a:joinL(good.map(elc)),b:joinL(bad.map(elc)),acts:good.map(e=>L().act[catOf(c,e)]).join(lang==='en'?'; ':'；')})}</p>`;
+  h+=`<h3>${T('a_meth')}</h3><p>${T('methT')}</p>`;
+  return h;
+}
+
+
+/* ---------- scoring ---------- */
+const SC={
+zh:{dims:['稳定性','五行流通','格局层次','用神质量','大运整体','运势后劲','事业','财富','学业贵人','婚姻','健康根基','抗压能力','子女缘'],
+ short:['稳定','流通','格局','用神','大运','后劲','事业','财富','学业','婚姻','健康','抗压','子女'],
+ desc:['日主偏离中和的程度、用神根基与月令日支的完整度','从最旺五行出发的相生链条，以及偏枯与缺失','成格与相神制化，扣除破格因素','用神是否透干、通根、得令，有无受克冲合','约10至70岁大运评级的加权平均，25至55岁权重较高','45岁以后各步大运评级的平均','官杀、印星、食伤的配合与格局取向','财星力量与日主任财能力','印星的力量与喜忌，以及贵人星','配偶星的力量与喜忌，日支的冲刑害合','日主强弱、五行偏枯与寒暖燥湿','官杀的有制有化程度','子女星的力量与喜忌，时柱关系与解救'],
+ boards:['命局结构','格局与用神','运势','专项'],boardsS:['结构','格局','运势','专项'],
+ types:['格局型','张力型','根基型','均衡型'],
+ scale:['极差','弱','中下','良','优','完美'],
+ v13:'13维',v4:'4板块',cmp:'对比命盘（最多4个）',cur:'当前命盘',noSaved:'保存命盘后，可在此勾选叠加对比。',
+ manual:'手动',reset:'恢复自动',dec:'降低0.5分',inc:'提高0.5分',auto:'自动',
+ sum:'汇总',avgB:'板块均值',avgAll:'综合均值',span:'分值跨度',type:'命局类型',top:'最高',spanV:'{a}至{b}',
+ foot:'评分为基于传统命理框架的结构化判断，适合用于命盘之间的相对比较。',scaleH:'评分标准',sep:'；',
+ ph:{share:'同党{p}%，{cls}',uRootS:'用神有强根',uRootW:'用神有弱根',uRootN:'用神无根',hit:'月令日支见{r}',intact:'月令日支安稳',
+  cv:'五行偏差{v}',gen:'天干相生{n}处',ctrl:'天干相克{n}处',vert:'同柱相生{n}',miss:'缺{els}',sHe:'天干五合{n}处',sChong:'天干相冲{n}处',
+  patM:'以月令定格',helperWeak:'相神根浅',bound:'天干有合绊',burden:'身弱难任',noCombo:'未见相神制化',
+  tou:'透干',notou:'不透',lingS:'得令',lingG:'得生',lingN:'失令',adj:'贴身',ke:'受克',chongU:'受冲',heU:'被合',
+  luckAvg:'加权均分{v}',best:'最佳{p}',worst:'最弱{p}',rootedGuan:'官杀有根且有制化',
+  caiRole:'财星为{r}',cap:'日主{cls}',caiVis:'财星透干',caiRoot:'财星有根',caiHe:'财星被合',
+  yinRole:'印星为{r}',yinTou:'印星透干',yinS:'印有强根',yinW:'印有弱根',yinN:'印无根',
+  spRole:'{s}为{r}',spM:'妻星',spF:'夫星',spNone:'配偶星不现',spPal:'配偶星坐日支',dayRel:'日支见{r}',dayStable:'日支无冲刑害',spHe:'配偶星被合',bj:'比劫争财',
+  skew:'偏枯',cli:'{t}{d}',noGuan:'官杀不显',zhi:'有制',hua:'有化',guanRaw:'杀旺无制',
+  kStar:'子女星{lv}，为{r}',lv:['强','中','弱'],kNone:'子女星不现',kSave:'有生扶之源',kHour:'时干为{r}',kHit:'时支见{r}',kOver:'子女星受制',kRescue:'有解救'},
+ combo:{shazhi:'食神制杀',shayin:'杀印相生',shishangcai:'食伤生财',caiguan:'财官相生',shangyin:'伤官配印',bjguan:'比劫用官杀',bjcai:'比劫见财',bjshi:'比劫生食伤'},
+ flag:{f_mix:'官杀混杂',f_shg:'伤官见官',f_xiaoA:'枭神夺食',f_xiaoD:'枭食隔位',f_cai:'财破印',f_bj:'比劫争财'}},
+ja:{dims:['安定性','五行の流通','格局の格','用神の質','大運全体','運勢の伸び','事業','財運','学業と貴人','結婚','健康の基盤','ストレス耐性','子女縁'],
+ short:['安定','流通','格局','用神','大運','伸び','事業','財運','学業','結婚','健康','耐性','子女'],
+ desc:['日主の中和からの偏り、用神の根、月令と日支の安定','最も強い五行から始まる相生の連なり、偏りと欠落','成格と相神の制化、破格要因を減点','用神の透干・通根・得令、剋冲合の有無','約10〜70歳の大運評価の加重平均（25〜55歳を重視）','45歳以降の大運評価の平均','官殺・印星・食傷の配合と格局の方向','財星の力と日主の担財力','印星の力と喜忌、貴人星','配偶星の力と喜忌、日支の冲刑害合','日主の強弱、五行の偏り、寒暖燥湿','官殺の制化の度合い','子女星の力と喜忌、時柱との関係と救い'],
+ boards:['命局の構造','格局と用神','運勢','分野別'],boardsS:['構造','格局','運勢','分野'],
+ types:['格局型','張力型','根基型','均衡型'],
+ scale:['極めて弱い','弱','中の下','良','優','完璧'],
+ v13:'13次元',v4:'4区分',cmp:'比較する命盤（最大4）',cur:'現在の命盤',noSaved:'命盤を保存すると、ここで重ねて比較できます。',
+ manual:'手動',reset:'自動に戻す',dec:'0.5下げる',inc:'0.5上げる',auto:'自動',
+ sum:'集計',avgB:'区分平均',avgAll:'総合平均',span:'点数の幅',type:'命局のタイプ',top:'最高',spanV:'{a}〜{b}',
+ foot:'評価は伝統的な命理の枠組みに基づく構造的な判断で、命盤どうしの相対比較に向いています。',scaleH:'評価基準',sep:'、',
+ ph:{share:'同党{p}%、{cls}',uRootS:'用神に強根',uRootW:'用神に弱根',uRootN:'用神に根なし',hit:'月令・日支に{r}',intact:'月令・日支は安定',
+  cv:'五行の偏り{v}',gen:'天干の相生{n}',ctrl:'天干の相剋{n}',vert:'同柱の相生{n}',miss:'{els}が欠ける',sHe:'天干の五合{n}',sChong:'天干の相冲{n}',
+  patM:'月令で定格',helperWeak:'相神の根が浅い',bound:'天干に合絆',burden:'身弱で担いにくい',noCombo:'相神の制化なし',
+  tou:'透干',notou:'透干せず',lingS:'得令',lingG:'得生',lingN:'失令',adj:'日主に隣接',ke:'剋を受ける',chongU:'冲を受ける',heU:'合去',
+  luckAvg:'加重平均{v}',best:'最良{p}',worst:'最弱{p}',rootedGuan:'官殺に根があり制化あり',
+  caiRole:'財星は{r}',cap:'日主{cls}',caiVis:'財星が透干',caiRoot:'財星に根',caiHe:'財星が合',
+  yinRole:'印星は{r}',yinTou:'印星が透干',yinS:'印に強根',yinW:'印に弱根',yinN:'印に根なし',
+  spRole:'{s}は{r}',spM:'妻星',spF:'夫星',spNone:'配偶星なし',spPal:'配偶星が日支に',dayRel:'日支に{r}',dayStable:'日支に冲刑害なし',spHe:'配偶星が合',bj:'比劫が財を争う',
+  skew:'偏りが大きい',cli:'{t}・{d}',noGuan:'官殺が目立たない',zhi:'制あり',hua:'化あり',guanRaw:'殺旺で制なし',
+  kStar:'子女星は{lv}、{r}',lv:['強','中','弱'],kNone:'子女星なし',kSave:'生ずる源あり',kHour:'時干は{r}',kHit:'時支に{r}',kOver:'子女星が制される',kRescue:'救いあり'},
+ combo:{shazhi:'食神制殺',shayin:'殺印相生',shishangcai:'食傷生財',caiguan:'財官相生',shangyin:'傷官佩印',bjguan:'比劫に官殺',bjcai:'比劫に財',bjshi:'比劫が食傷を生ず'},
+ flag:{f_mix:'官殺混雑',f_shg:'傷官見官',f_xiaoA:'梟神奪食',f_xiaoD:'梟と食が隔位',f_cai:'財が印を壊す',f_bj:'比劫争財'}},
+en:{dims:['Stability','Element flow','Pattern quality','Useful god','Luck overall','Late momentum','Career','Wealth','Learning and mentors','Marriage','Health base','Resilience','Children'],
+ short:['Stable','Flow','Pattern','Useful','Luck','Late','Career','Wealth','Learn','Marry','Health','Resil.','Kids'],
+ desc:['How far the self is from balance, useful-god roots, and intact month and day branches','The generating chain from the strongest element, with gaps and imbalance','Pattern formation and supporting combinations, minus breaking factors','Whether the useful element shows, is rooted and seasonal, or is attacked or combined away','Weighted average of luck pillars from about 10 to 70, with 25 to 55 weighted higher','Average rating of luck pillars after age 45','How Power, Resource and Output work together with the pattern','Wealth strength combined with the capacity to hold it','Resource strength and role, plus helpful stars','Spouse star strength and role; clashes and combinations of the day branch','Self strength, element imbalance and climate','How well Power is controlled or transformed','Children star strength and role; hour pillar relations and rescue'],
+ boards:['Structure','Pattern and useful god','Fortune','Life domains'],boardsS:['Structure','Pattern','Fortune','Domains'],
+ types:['Pattern-led','Tension','Foundation','Balanced'],
+ scale:['Very poor','Weak','Below average','Good','Strong','Flawless'],
+ v13:'13 dimensions',v4:'4 sections',cmp:'Compare charts (up to 4)',cur:'Current chart',noSaved:'Save charts to overlay and compare them here.',
+ manual:'Manual',reset:'Reset to auto',dec:'Lower by 0.5',inc:'Raise by 0.5',auto:'Auto',
+ sum:'Summary',avgB:'Section average',avgAll:'Overall average',span:'Score range',type:'Chart type',top:'Top',spanV:'{a} to {b}',
+ foot:'Scores are structured judgments within the traditional BaZi framework and work best for comparing charts with each other.',scaleH:'Scale',sep:'; ',
+ ph:{share:'support {p}%, {cls}',uRootS:'useful element strongly rooted',uRootW:'useful element weakly rooted',uRootN:'useful element unrooted',hit:'month or day branch: {r}',intact:'month and day branches intact',
+  cv:'element spread {v}',gen:'{n} generating stem links',ctrl:'{n} controlling stem links',vert:'{n} self-generating pillars',miss:'missing {els}',sHe:'{n} stem combinations',sChong:'{n} stem clashes',
+  patM:'pattern from month branch',helperWeak:'helper weakly rooted',bound:'stems tied by combination',burden:'weak self strains',noCombo:'no supporting combination',
+  tou:'visible',notou:'hidden',lingS:'in season',lingG:'season supports',lingN:'out of season',adj:'next to self',ke:'attacked',chongU:'clashed',heU:'combined away',
+  luckAvg:'weighted avg {v}',best:'best {p}',worst:'weakest {p}',rootedGuan:'rooted Power with control',
+  caiRole:'Wealth is {r}',cap:'self {cls}',caiVis:'Wealth visible',caiRoot:'Wealth rooted',caiHe:'Wealth combined away',
+  yinRole:'Resource is {r}',yinTou:'Resource visible',yinS:'Resource strongly rooted',yinW:'Resource weakly rooted',yinN:'Resource unrooted',
+  spRole:'{s} is {r}',spM:'spouse star',spF:'spouse star',spNone:'no spouse star',spPal:'spouse star in day branch',dayRel:'day branch: {r}',dayStable:'day branch stable',spHe:'spouse star combined away',bj:'Companions compete for Wealth',
+  skew:'skewed',cli:'{t}, {d}',noGuan:'Power faint',zhi:'controlled',hua:'transformed',guanRaw:'strong Power unchecked',
+  kStar:'children star {lv}, {r}',lv:['strong','moderate','weak'],kNone:'no children star',kSave:'a source can produce it',kHour:'hour stem is {r}',kHit:'hour branch: {r}',kOver:'children star suppressed',kRescue:'rescued'},
+ combo:{shazhi:'Eating God controls Killings',shayin:'Killings feed Resource',shishangcai:'Output feeds Wealth',caiguan:'Wealth feeds Power',shangyin:'Hurting Officer with Resource',bjguan:'Companions with Power',bjcai:'Companions with Wealth',bjshi:'Companions feed Output'},
+ flag:{f_mix:'mixed Officer and Killings',f_shg:'Hurting Officer meets Officer',f_xiaoA:'Indirect Resource seizes food',f_xiaoD:'Indirect Resource apart from Eating God',f_cai:'Wealth harms Resource',f_bj:'Companions compete for Wealth'}}
+};
+Object.assign(LANGS.zh,{tabs:[...LANGS.zh.tabs,'命局评分']});Object.assign(LANGS.ja,{tabs:[...LANGS.ja.tabs,'命局評価']});Object.assign(LANGS.en,{tabs:[...LANGS.en.tabs,'Chart scores']});
+const SL=()=>SC[lang];
+const PHf=(k,v)=>{let s=SL().ph[k]||k;if(v)s=s.replace(/\{(\w+)\}/g,(m,p)=>v[p]!==undefined?v[p]:'');return s;};
+const r05=x=>Math.max(0,Math.min(5,Math.round(x*2)/2));
+const BOARDS=[[0,1],[2,3],[4,5],[6,7,8,9,10,11,12]];
+function scoreChart(c){
+  const P=c.P,dm=c.dm,dmE=c.dmE,ce=k=>(dmE+k)%5,role=c.role,RSc=[0.6,0.4,0,-0.3,-0.6];
+  const tot=c.catW.reduce((a,b)=>a+b,0);
+  const rootF=e=>{let s=false,w=false;P.forEach(p=>{const h=HID[p.b];if(SE(h[0])===e)s=true;else if(h.slice(1).some(x=>SE(x)===e))w=true;});return s?1:w?0.75:0.5;};
+  const visP=[0,1,3].map(i=>({i,g:tg(dm,P[i].s),cat:Math.floor(tg(dm,P[i].s)/2)}));
+  const visCat=k=>visP.filter(v=>v.cat===k), hasCat=k=>visCat(k).length>0, hasG=g=>visP.some(v=>v.g===g);
+  const cntCat=k=>c.tgAll[2*k]+c.tgAll[2*k+1];
+  const dev=Math.abs(c.ratio-0.5), rel=L().rel, sep=SL().sep, out=[], why=[];
+  const relW={chong:-0.3,xing:-0.3,zixing:-0.2,hai:-0.2,po:-0.2,liuhe:-0.05,banhe:-0.05,sanhe:-0.05,sanhui:-0.05,gong:0};
+  const relName=r=>r.chars.map(b=>B[b]).join('')+rel[r.t];
+  // 1 stability
+  {let s=4-dev*4,w=[PHf('share',{p:Math.round(c.ratio*100),cls:L().cls[c.cls]})];
+   if(c.sr>=1){s+=0.25;w.push(PHf('uRootS'));}else if(c.wr>=1){s+=0.1;w.push(PHf('uRootW'));}else{s-=0.25;w.push(PHf('uRootN'));}
+   const hits=c.brRel.filter(r=>r.m.some(m=>m===1||m===2)&&relW[r.t]);hits.forEach(r=>s+=relW[r.t]);
+   w.push(hits.length?PHf('hit',{r:hits.map(relName).join('、')}):PHf('intact'));out.push(s);why.push(w);}
+  // 2 flow
+  const ew=c.elW,mean=ew.reduce((a,b)=>a+b,0)/5,cv=Math.sqrt(ew.reduce((a,b)=>a+(b-mean)**2,0)/5)/mean;
+  {const g=(a,b)=>(a+1)%5===b||(b+1)%5===a, k=(a,b)=>(a+2)%5===b||(b+2)%5===a;let gen=0,ctl=0,vert=0;
+   for(let i=0;i<3;i++){const a=SE(P[i].s),b=SE(P[i+1].s);if(g(a,b))gen++;else if(k(a,b))ctl++;}
+   P.forEach(p=>{if(g(SE(p.s),BE[p.b]))vert++;});
+   const miss=[0,1,2,3,4].filter(e=>c.hidCnt[e]===0),heN=c.stemRel.filter(r=>r.t==='he').length,chN=c.stemRel.filter(r=>r.t==='chong').length;
+   const s=3.4-1.5*cv+0.35*gen+0.15*vert-0.1*ctl-0.5*miss.length-0.2*chN+0.25*heN;
+   const w=[PHf('cv',{v:cv.toFixed(2)}),PHf('gen',{n:gen})];if(ctl)w.push(PHf('ctrl',{n:ctl}));if(vert)w.push(PHf('vert',{n:vert}));
+   if(miss.length)w.push(PHf('miss',{els:miss.map(e=>L().el[e]).join('')}));if(heN)w.push(PHf('sHe',{n:heN}));if(chN)w.push(PHf('sChong',{n:chN}));
+   out.push(s);why.push(w);}
+  // combos
+  const combos=[];const addC=(key,v,hc)=>{const n=visCat(hc).length||1;combos.push({key,v:v*rootF(ce(hc))*(1+0.25*(n-1)),hc});};
+  if(c.patCat===0){if(hasCat(3))addC('bjguan',0.5,3);if(hasCat(2))addC('bjcai',0.3,2);if(hasCat(1))addC('bjshi',0.3,1);}
+  if(hasG(6)&&hasCat(1))addC('shazhi',0.75,1);if(hasCat(3)&&hasCat(4))addC('shayin',0.75,4);
+  if(hasCat(1)&&hasCat(2))addC('shishangcai',0.6,1);if(hasCat(2)&&hasCat(3))addC('caiguan',0.4,2);if(hasG(3)&&hasCat(4))addC('shangyin',0.5,4);
+  combos.sort((a,b)=>b.v-a.v);
+  const yinRoot=rootF(ce(4)), burden=c.cls<=1&&(c.patCat===2||c.patCat===3)&&(!hasCat(4)||yinRoot<0.6);
+  const tied=c.stemRel.some(r=>r.t==='he'&&r.i!==2&&r.j!==2);
+  // 3 pattern
+  {let s=c.patFrom==='stem'?3:2.5;const w=[c.patName+(c.patFrom==='stem'?'':`（${PHf('patM')}）`)];
+   if(combos.length){s+=combos[0].v+0.25*combos.slice(1).reduce((a,b)=>a+b.v,0);w.push(combos.map(x=>SL().combo[x.key]).join('、'));if(combos.some(x=>rootF(ce(x.hc))<0.6))w.push(PHf('helperWeak'));}
+   else w.push(PHf('noCombo'));
+   s+=c.agreeI===0?0.25:c.agreeI===1?0.1:0;
+   const FP={f_cai:-0.5,f_shg:-0.5,f_xiaoA:-0.5,f_xiaoD:-0.1,f_bj:-0.4,f_mix:-0.3};c.flags.forEach(f=>{s+=FP[f]||0;w.push(SL().flag[f]);});
+   if(tied){s-=0.2;w.push(PHf('bound'));}if(burden){s-=0.3;w.push(PHf('burden'));}
+   out.push(s);why.push(w);}
+  // 4 useful god
+  const U=c.fin,ctrlU=ctrl(U);
+  {let s=2;const w=[L().el[U]];const uSt=[0,1,3].filter(i=>SE(P[i].s)===U);
+   if(uSt.length){s+=0.5;w.push(PHf('tou'));}else w.push(PHf('notou'));
+   if(c.sr>=1){s+=0.75;w.push(PHf('uRootS'));}else if(c.wr>=1){s+=0.4;w.push(PHf('uRootW'));}else{s-=0.5;w.push(PHf('uRootN'));}
+   const mM=BE[P[1].b];if(mM===U){s+=0.5;w.push(PHf('lingS'));}else if((mM+1)%5===U){s+=0.25;w.push(PHf('lingG'));}else w.push(PHf('lingN'));
+   if(c.qingI===0){s+=0.25;w.push(PHf('adj'));}
+   if(uSt.some(i=>[i-1,i+1].some(j=>j>=0&&j<4&&SE(P[j].s)===ctrlU))){s-=0.3;w.push(PHf('ke'));}
+   if(c.stemRel.some(r=>r.t==='chong'&&(uSt.includes(r.i)||uSt.includes(r.j)))){s-=0.3;w.push(PHf('chongU'));}
+   if(c.stemRel.some(r=>r.t==='he'&&((uSt.includes(r.i)&&r.j!==2)||(uSt.includes(r.j)&&r.i!==2)))){s-=0.4;w.push(PHf('heU'));}
+   out.push(s);why.push(w);}
+  // 5,6 luck
+  const luckAvg=(a0,a1,wf)=>{let sum=0,ws=0,best=null,worst=null;c.luck.forEach((l,i)=>{const st=c.startYears+10*i,en=st+10,ov=Math.max(0,Math.min(en,a1)-Math.max(st,a0))/10;if(ov<=0)return;
+    const sc=rateP(l,c).sc,wt=ov*wf((st+en)/2);sum+=sc*wt;ws+=wt;if(!best||sc>best.sc)best={l,sc};if(!worst||sc<worst.sc)worst={l,sc};});return {avg:ws?sum/ws:0,best,worst};};
+  const lw=(m)=>m>=25&&m<=55?1.5:1;
+  [[10,70,lw],[45,70,()=>1]].forEach(([a0,a1,wf])=>{const r=luckAvg(a0,a1,wf),s=3+1.5*Math.tanh(r.avg/1.5);
+    const w=[PHf('luckAvg',{v:r.avg.toFixed(2)})];if(r.best)w.push(PHf('best',{p:S[r.best.l.s]+B[r.best.l.b]}));if(r.worst)w.push(PHf('worst',{p:S[r.worst.l.s]+B[r.worst.l.b]}));out.push(s);why.push(w);});
+  // 7 career
+  {let s=2.5;const w=[];const cv7={shayin:0.7,shazhi:0.4,shishangcai:0.3};
+   combos.forEach(x=>{if(cv7[x.key]){const base=x.v/({shayin:0.75,shazhi:0.75,shishangcai:0.6}[x.key]);s+=cv7[x.key]*base;w.push(SL().combo[x.key]);}});
+   if(c.patFrom==='stem'){s+=0.3;w.unshift(c.patName);}
+   const guanRootS=P.some(p=>SE(HID[p.b][0])===ce(3));if(guanRootS&&combos.some(x=>x.key==='shayin'||x.key==='shazhi')){s+=0.3;w.push(PHf('rootedGuan'));}
+   if(burden){s-=0.3;w.push(PHf('burden'));}if(!w.length)w.push(PHf('noCombo'));out.push(s);why.push(w);}
+  // 8 wealth
+  {let s=2.5;const ec=ce(2),w=[PHf('caiRole',{r:L().role[role[ec]]})];s+=RSc[role[ec]];
+   if(combos.some(x=>x.key==='shishangcai')){s+=0.4;w.push(SL().combo.shishangcai);}
+   if(c.flags.includes('f_bj')){s-=0.3;w.push(PHf('bj'));}
+   s+=[-0.3,-0.15,0.2,0.3,0.3][c.cls];w.push(PHf('cap',{cls:L().cls[c.cls]}));
+   if(P.some(p=>SE(HID[p.b][0])===ec)){s+=0.2;w.push(PHf('caiRoot'));}
+   const cSt=[0,1,3].filter(i=>SE(P[i].s)===ec);if(cSt.length){s+=0.2;w.push(PHf('caiVis'));}
+   if(c.stemRel.some(r=>r.t==='he'&&r.i!==2&&r.j!==2&&(cSt.includes(r.i)||cSt.includes(r.j)))){s-=0.2;w.push(PHf('caiHe'));}
+   out.push(s);why.push(w);}
+  // 9 learning
+  {let s=2.5;const ey=ce(4),w=[PHf('yinRole',{r:L().role[role[ey]]})];s+=role[ey]<=1?0.6:role[ey]===2?0.2:0;
+   if(hasCat(4)){s+=0.3;w.push(PHf('yinTou'));}
+   const rf=rootF(ey);if(rf===1){s+=0.4;w.push(PHf('yinS'));}else if(rf===0.75){s+=0.2;w.push(PHf('yinW'));}else{s-=0.8;w.push(PHf('yinN'));}
+   [['tianyi',0.2],['wenchang',0.2],['huagai',0.1]].forEach(([k,v])=>{if(c.ssr.some(x=>x.k===k)){s+=v;w.push(L().ss[k][0]);}});
+   out.push(s);why.push(w);}
+  // 10 marriage
+  const male=c.gender==='m';
+  {let s=2.5;const sc=male?2:3,es=ce(sc),w=[];const n=cntCat(sc);
+   if(n){s+=0.2+[0.5,0.5,0,-0.2,-0.4][role[es]];w.push(PHf('spRole',{s:male?PHf('spM'):PHf('spF'),r:L().role[role[es]]}));}else{s-=0.5;w.push(PHf('spNone'));}
+   const sSt=[0,1,3].filter(i=>SE(P[i].s)===es);if(sSt.length)s+=0.2;
+   if(c.tgAll[male?5:7]>0)s+=0.1;
+   const db=P[2].b;if(HID[db].some(h=>SE(h)===es)){s+=0.5;w.push(PHf('spPal'));}
+   const dr=c.brRel.filter(r=>r.m.includes(2)&&['chong','xing','zixing','hai','po'].includes(r.t));
+   dr.forEach(r=>{s+={chong:-0.5,xing:-0.3,zixing:-0.3,hai:-0.3,po:-0.2}[r.t];});
+   if(!dr.some(r=>['chong','xing','zixing','hai'].includes(r.t))){s+=0.3;w.push(PHf('dayStable'));}
+   if(dr.length)w.push(PHf('dayRel',{r:dr.map(relName).join('、')}));
+   s+=[0.3,0.3,0,-0.15,-0.3][role[BE[db]]];
+   if(c.stemRel.some(r=>r.t==='he'&&r.i!==2&&r.j!==2&&(sSt.includes(r.i)||sSt.includes(r.j)))){s-=0.4;w.push(PHf('spHe'));}
+   if(male&&c.flags.includes('f_bj')){s-=0.3;w.push(PHf('bj'));}
+   out.push(s);why.push(w);}
+  // 11 health
+  {let s=3.5-2*dev;const w=[PHf('cap',{cls:L().cls[c.cls]})];const miss=[0,1,2,3,4].filter(e=>c.hidCnt[e]===0);
+   if(miss.length){s-=0.4*miss.length;w.push(PHf('miss',{els:miss.map(e=>L().el[e]).join('')}));}
+   if(cv>0.55){s-=0.3;w.push(PHf('skew'));}
+   const cp=i=>i===0||i===4?0.3:i===1||i===3?0.2:0;s-=cp(c.tI)+cp(c.dI);w.push(PHf('cli',{t:L().temp[c.tI],d:L().dry[c.dI]}));
+   out.push(s);why.push(w);}
+  // 12 resilience
+  {let s;const w=[];const gW=c.catW[3],gV=hasCat(3);
+   if(gW<1.5&&!gV){s=2.5+(c.cls>=3?0.25:0);w.push(PHf('noGuan'));}
+   else{const z=hasCat(1)?rootF(ce(1)):c.catW[1]>=1?0.5*rootF(ce(1)):0,h=hasCat(4)?rootF(ce(4)):c.catW[4]>=1?0.5*rootF(ce(4)):0;
+     if(z===0&&h===0){s=1+(c.cls>=3?0.5:0);w.push(PHf('guanRaw'));}
+     else{s=2+z+h+(z>0&&h>0?0.3:0);if(z)w.push(PHf('zhi'));if(h)w.push(PHf('hua'));if(z&&z<0.6||h&&h<0.6)w.push(PHf('helperWeak'));}}
+   out.push(s);why.push(w);}
+  // 13 children
+  {let s=2.5;const kc=male?3:1,ek=ce(kc),kW=c.catW[kc],w=[];const hb=P[3].b;
+   if(cntCat(kc)===0){s-=0.4;w.push(PHf('kNone'));const src=male?2:0;if(c.catW[src]>=2){s+=0.3;w.push(PHf('kSave'));}}
+   else{const lv=kW>=2.5?0:kW>=1?1:2;s+=[0.5,0.25,-0.3][lv]+[0.25,0.25,0,-0.1,-0.15][role[ek]];w.push(PHf('kStar',{lv:SL().ph.lv[lv],r:L().role[role[ek]]}));
+     if(hasCat(kc))s+=0.2;
+     if(SE(HID[hb][0])===ek)s+=0.3;else if(HID[hb].some(h=>SE(h)===ek))s+=0.15;
+     const ov=male?c.catW[1]:c.catW[4],resc=male?hasCat(4):hasCat(2);if(ov>1.5*kW){if(resc)w.push(PHf('kRescue'));else{s-=0.4;w.push(PHf('kOver'));}}}
+   const hr=role[SE(P[3].s)];if(hr<=1){s+=0.3;w.push(PHf('kHour',{r:L().role[hr]}));}else if(hr===4)s-=0.2;
+   const hh=c.brRel.filter(r=>r.m.includes(3)&&['chong','xing','zixing','hai'].includes(r.t));hh.forEach(r=>{s+=r.t==='hai'?-0.2:-0.4;});
+   if(hh.length)w.push(PHf('kHit',{r:hh.map(relName).join('、')}));
+   out.push(s);why.push(w);}
+  return {auto:out.map(r05),raw:out,basis:why.map(w=>w.join(sep)),cls:c.cls};
+}
+function finalScores(sc,man){return sc.auto.map((v,i)=>man&&man[i]!==undefined?man[i]:v);}
+function stats(v,cls){const b=BOARDS.map(g=>g.reduce((a,i)=>a+v[i],0)/g.length),all=v.reduce((a,b)=>a+b,0)/13,mn=Math.min(...v),mx=Math.max(...v);
+  let type=3;if(b[1]>=3.5&&b[2]<=3.0)type=0;else if(mx-mn>=2)type=1;else if(cls>=3&&v[1]<=2.5)type=2;return {b,all,mn,mx,type};}
+
+/* ---------- score tab UI ---------- */
+const MKEY='bazi.manual.v1';
+const getMan=()=>{try{return JSON.parse(localStorage.getItem(MKEY)||'{}');}catch(e){return {};}};
+const setMan=m=>{try{localStorage.setItem(MKEY,JSON.stringify(m));}catch(e){}};
+const sigOf=f=>[f.date,f.time,f.city,f.city==='__manual'?f.lon+'/'+f.tz:'',f.gender,f.zi,f.dst?1:0].join('|');
+let CMP=['cur'],VIEW13=true;
+function seriesCols(){const p=pal();return p.dark?['#E57366','#72B6BA','#8FB8EC','#E6CB4A']:['#A8322D','#2F6F74','#1E4C7A','#B08A12'];}
+const DASH=['','7 4','2 4','9 3 2 3'];
+function seriesList(){
+  const man=getMan(),out=[];
+  CMP.forEach(key=>{
+    if(key==='cur'){if(!C)return;const sc=scoreChart(C),m=man[C.sig]||{};out.push({key,sig:C.sig,name:C.inp.name||SL().cur,c:C,sc,man:m,v:finalScores(sc,m)});return;}
+    const e=getSaved().find(x=>sigOf(x.f)===key);if(!e)return;const inp=toInput(e.f);if(inp.err)return;
+    const c=compute(inp),sc=scoreChart(c),m=man[key]||e.manual||{};out.push({key,sig:key,name:e.label,c,sc,man:m,v:finalScores(sc,m)});});
+  const cols=seriesCols();out.forEach((s,i)=>{s.col=cols[i%4];s.dash=DASH[i%4];s.st=stats(s.v,s.c.cls);});
+  return out;
+}
+function radarSVG(ser,v13,short){
+  const p=pal(),W=short?520:720,H=short?500:620,cx=W/2,cy=H/2-4,R=short?150:200,n=v13?13:4,base=p.dark?'#1D1E22':'#FAF7F0';
+  const ang=i=>-Math.PI/2+2*Math.PI*i/n,pt=(i,r)=>[cx+r*Math.cos(ang(i)),cy+r*Math.sin(ang(i))];
+  const bcol=[p.el[2],p.el[3],p.el[4],p.el[0]];
+  let o=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(SL().sum)}" class="radar">`;
+  o+=`<rect width="${W}" height="${H}" fill="${base}" rx="10"/>`;
+  const wedge=(a0,a1,col)=>{const x0=cx+R*Math.cos(a0),y0=cy+R*Math.sin(a0),x1=cx+R*Math.cos(a1),y1=cy+R*Math.sin(a1),lg=(a1-a0)>Math.PI?1:0;
+    return `<path d="M${cx} ${cy}L${x0.toFixed(1)} ${y0.toFixed(1)}A${R} ${R} 0 ${lg} 1 ${x1.toFixed(1)} ${y1.toFixed(1)}Z" fill="${col}" fill-opacity="${p.dark?0.12:0.09}"/>`;};
+  const half=Math.PI/n;
+  if(v13)BOARDS.forEach((g,b)=>{o+=wedge(ang(g[0])-half,ang(g[g.length-1])+half,bcol[b]);});
+  else for(let i=0;i<4;i++)o+=wedge(ang(i)-half,ang(i)+half,bcol[i]);
+  for(let k=1;k<=5;k++)o+=`<circle cx="${cx}" cy="${cy}" r="${R*k/5}" fill="none" stroke="${p.line}" stroke-width="${k===5?1.2:0.8}" ${k<5?'stroke-dasharray="2 3"':''}/>`;
+  for(let i=0;i<n;i++){const [x,y]=pt(i,R);o+=`<line x1="${cx}" y1="${cy}" x2="${x.toFixed(1)}" y2="${y.toFixed(1)}" stroke="${p.line}" stroke-width=".8"/>`;}
+  for(let k=1;k<=5;k++)o+=`<text x="${cx+4}" y="${cy-R*k/5-3}" font-family="${FS}" font-size="${short?14:10}" fill="${p.muted}">${k}</text>`;
+  // labels with overlap avoidance
+  const names=v13?(short?SL().short:SL().dims):(short?SL().boardsS:SL().boards),fs=short?(lang==='en'?17:19):12.5;
+  const labs=names.map((t,i)=>{const a=ang(i),c=Math.cos(a),s=Math.sin(a),w=t.length*(lang==='en'?fs*0.55:fs)+4;return {t,i,c,s,w,r:R+20,anc:c>0.25?'start':c<-0.25?'end':'middle'};});
+  const box=l=>{const x=cx+l.r*l.c,y=cy+l.r*l.s+(l.s>0.3?8:l.s<-0.3?-4:4);const x0=l.anc==='start'?x:l.anc==='end'?x-l.w:x-l.w/2;return {x,y,x0,x1:x0+l.w,y0:y-fs,y1:y+3};};
+  for(let it=0;it<10;it++){let moved=false;for(let a=0;a<labs.length;a++)for(let b=a+1;b<labs.length;b++){const A=box(labs[a]),Bx=box(labs[b]);
+    if(A.x0<Bx.x1&&Bx.x0<A.x1&&A.y0<Bx.y1&&Bx.y0<A.y1){labs[b].r+=6;labs[a].r+=3;moved=true;}}if(!moved)break;}
+  labs.forEach(l=>{const b=box(l);o+=`<text x="${b.x.toFixed(1)}" y="${b.y.toFixed(1)}" text-anchor="${l.anc}" font-family="${FS}" font-size="${fs}" fill="${p.ink}">${esc(l.t)}</text>`;});
+  // series
+  ser.forEach((s,si)=>{const vals=v13?s.v:s.st.b;const pts=vals.map((v,i)=>pt(i,R*v/5));
+    o+=`<path d="M${pts.map(q=>q[0].toFixed(1)+' '+q[1].toFixed(1)).join('L')}Z" fill="${s.col}" fill-opacity="${ser.length>1?0.08:0.14}" stroke="${s.col}" stroke-width="2" stroke-linejoin="round" ${s.dash?`stroke-dasharray="${s.dash}"`:''}/>`;
+    pts.forEach((q,i)=>{const man=v13&&s.man[i]!==undefined;o+=`<circle cx="${q[0].toFixed(1)}" cy="${q[1].toFixed(1)}" r="${(man?4.6:3.6)*(short?1.3:1)}" fill="${man?(p.dark?'#D25A4E':'#A8322D'):s.col}" stroke="${base}" stroke-width="1.4"/>`;});});
+  ser.forEach((s,si)=>{const vals=v13?s.v:s.st.b;vals.forEach((v,i)=>{const q=pt(i,R*v/5);o+=`<circle class="hit" data-s="${si}" data-d="${i}" cx="${q[0].toFixed(1)}" cy="${q[1].toFixed(1)}" r="11" fill="transparent" tabindex="0" role="button" aria-label="${esc(s.name+' '+names[i]+' '+(v13?v.toFixed(1):v.toFixed(2)))}"/>`;});});
+  return o+'</svg>';
+}
+function tableRows(ser){
+  const rows=[];SL().dims.forEach((d,i)=>rows.push({lab:d,vals:ser.map(s=>({t:s.v[i].toFixed(1),man:s.man[i]!==undefined}))}));
+  SL().boards.forEach((b,k)=>{const vs=ser.map(s=>s.st.b[k]),mx=Math.max(...vs);rows.push({lab:SL().avgB+(lang==='en'?': ':'：')+b,board:true,vals:vs.map(v=>({t:v.toFixed(2),top:ser.length>1&&v>=mx-1e-9}))});});
+  rows.push({lab:SL().avgAll,strong:true,vals:ser.map(s=>({t:s.st.all.toFixed(2)}))});
+  rows.push({lab:SL().span,vals:ser.map(s=>({t:SL().spanV.replace('{a}',s.st.mn.toFixed(1)).replace('{b}',s.st.mx.toFixed(1))}))});
+  rows.push({lab:SL().type,strong:true,vals:ser.map(s=>({t:SL().types[s.st.type]}))});
+  return rows;
+}
+function tableSVG(ser){
+  const p=pal(),W=800,rh=26,rows=tableRows(ser),H=rh*(rows.length+1)+20,lw=250,cw=(W-lw-30)/Math.max(1,ser.length),base=p.dark?'#1D1E22':'#FAF7F0';
+  let o=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}"><rect width="${W}" height="${H}" fill="${base}" rx="10"/>`;
+  ser.forEach((s,i)=>{const x0=lw+cw*i+4;o+=`<line x1="${x0}" y1="20" x2="${x0+16}" y2="20" stroke="${s.col}" stroke-width="2.4" ${s.dash?`stroke-dasharray="${s.dash}"`:''}/><text x="${x0+20}" y="24" font-family="${FS}" font-size="11" fill="${p.ink}">${esc(s.name.length>16?s.name.slice(0,15)+'…':s.name)}</text>`;});
+  rows.forEach((r,k)=>{const y=rh*(k+1)+18;o+=`<line x1="16" y1="${y+8}" x2="${W-16}" y2="${y+8}" stroke="${p.line}" stroke-width=".7"/><text x="20" y="${y}" font-family="${FS}" font-size="12" fill="${r.board?p.ink:p.muted}" ${r.strong?'font-weight="600"':''}>${esc(r.lab)}</text>`;
+    r.vals.forEach((v,i)=>{const x=lw+cw*i+cw/2;o+=`<text x="${x}" y="${y}" text-anchor="middle" font-family="${FS}" font-size="12.5" fill="${v.man||v.top?(p.dark?'#D25A4E':'#A8322D'):p.ink}" ${r.strong||v.top?'font-weight="600"':''}>${esc(v.t)}${v.top?' ★':''}${v.man?' •':''}</text>`;});});
+  return o+'</svg>';
+}
+function setManual(sig,i,val){
+  const m=getMan();m[sig]=m[sig]||{};if(val===null)delete m[sig][i];else m[sig][i]=val;if(!Object.keys(m[sig]).length)delete m[sig];setMan(m);
+  const a=getSaved();let ch=false;a.forEach(e=>{if(sigOf(e.f)===sig){e.manual=m[sig]||{};ch=true;}});if(ch)setSaved(a);
+}
+function tabScore(){
+  const ser=seriesList(),p=pal(),narrow=(($('tabpanel').clientWidth||800)<600);
+  const saved=getSaved();
+  let h=`<div class="scorebar"><div class="seg2" role="group">${[[true,SL().v13],[false,SL().v4]].map(([v,t])=>`<button class="btn sm" data-v="${v?1:0}" aria-pressed="${VIEW13===v}">${t}</button>`).join('')}</div></div>`;
+  h+=`<h3>${SL().cmp}</h3><div class="cmp">`+[['cur',SL().cur+(C&&C.inp.name?`（${esc(C.inp.name)}）`:'')],...saved.map(e=>[sigOf(e.f),e.label])].filter((x,i,a)=>a.findIndex(y=>y[0]===x[0])===i)
+    .map(([k,t])=>{const on=CMP.includes(k),idx=CMP.indexOf(k),col=idx>=0?seriesCols()[idx]:'transparent';return `<label class="chip"><input type="checkbox" data-k="${esc(k)}"${on?' checked':''}${!on&&CMP.length>=4?' disabled':''}><span class="sw" style="background:${col}"></span>${esc(t)}</label>`;}).join('')+`</div>`;
+  if(!saved.length)h+=`<p class="hint">${SL().noSaved}</p>`;
+  h+=`<div class="radarwrap" id="radarwrap"><div class="radarscroll">${radarSVG(ser,VIEW13,narrow)}</div><div class="tip" id="rtip" hidden></div></div>`;
+  h+=`<div class="legend" style="border:0;padding:6px 0">`+ser.map(s=>`<span><svg width="30" height="10"><line x1="0" y1="5" x2="30" y2="5" stroke="${s.col}" stroke-width="2.4" ${s.dash?`stroke-dasharray="${s.dash}"`:''}/></svg>${esc(s.name)}</span>`).join('')+
+    SL().boards.map((b,k)=>`<span><i style="display:inline-block;width:12px;height:12px;border-radius:3px;background:${[p.el[2],p.el[3],p.el[4],p.el[0]][k]};opacity:.35"></i>${b}</span>`).join('')+`</div>`;
+  h+=`<p class="hint">${SL().scaleH}${lang==='en'?': ':'：'}${[5,4,3,2,1,0].map(k=>`${k} ${SL().scale[k]}`).join('　')}</p>`;
+  // dimension list for first series
+  const s0=ser.find(s=>s.key==='cur')||ser[0];
+  if(s0){h+=`<h3>${esc(s0.name)}</h3>`;
+    BOARDS.forEach((g,b)=>{h+=`<div class="board"><div class="bh"><span class="sw" style="background:${[p.el[2],p.el[3],p.el[4],p.el[0]][b]}"></span>${SL().boards[b]}<span class="hint">${s0.st.b[b].toFixed(2)}</span></div>`;
+      g.forEach(i=>{const man=s0.man[i]!==undefined;h+=`<div class="dim"><div class="dn"><strong>${SL().dims[i]}</strong><div class="hint">${SL().desc[i]}</div></div>
+        <div class="dc"><button class="btn sm" data-adj="${i}" data-dv="-0.5" aria-label="${SL().dec}">−</button><span class="dv${man?' man':''}">${s0.v[i].toFixed(1)}${man?`<em>${SL().manual}</em>`:''}</span><button class="btn sm" data-adj="${i}" data-dv="0.5" aria-label="${SL().inc}">+</button>${man?`<button class="lnk" data-reset="${i}">${SL().reset}（${SL().auto} ${s0.sc.auto[i].toFixed(1)}）</button>`:''}</div>
+        <div class="db hint">${esc(s0.sc.basis[i])}</div></div>`;});h+=`</div>`;});}
+  // summary table
+  const rows=tableRows(ser);
+  h+=`<h3>${SL().sum}</h3><div class="tblwrap"><table class="tbl"><thead><tr><th></th>${ser.map(s=>`<th><svg width="24" height="8"><line x1="0" y1="4" x2="24" y2="4" stroke="${s.col}" stroke-width="2.4" ${s.dash?`stroke-dasharray="${s.dash}"`:''}/></svg> ${esc(s.name)}</th>`).join('')}</tr></thead><tbody>`+
+    rows.map(r=>`<tr><th${r.board||r.strong?' style="color:var(--ink)"':''}>${esc(r.lab)}</th>${r.vals.map(v=>`<td${r.strong?' style="font-weight:600"':''}>${esc(v.t)}${v.top?` <span class="stamp">${SL().top}</span>`:''}${v.man?` <span class="mdot" title="${SL().manual}"></span>`:''}</td>`).join('')}</tr>`).join('')+`</tbody></table></div>`;
+  h+=`<p class="note">${SL().foot}</p>`;
+  return h;
+}
+function bindScore(){
+  const pn=$('tabpanel');if(!pn)return;
+  pn.querySelectorAll('[data-v]').forEach(b=>b.onclick=()=>{VIEW13=b.dataset.v==='1';renderTab();});
+  pn.querySelectorAll('.cmp input').forEach(i=>i.onchange=()=>{const k=i.dataset.k;if(i.checked){if(CMP.length<4&&!CMP.includes(k))CMP.push(k);}else CMP=CMP.filter(x=>x!==k);renderTab();});
+  pn.querySelectorAll('[data-adj]').forEach(b=>b.onclick=()=>{const ser=seriesList(),s0=ser.find(s=>s.key==='cur')||ser[0];if(!s0)return;const i=+b.dataset.adj;const nv=Math.max(0,Math.min(5,s0.v[i]+parseFloat(b.dataset.dv)));
+    setManual(s0.sig,i,nv===s0.sc.auto[i]?null:nv);renderTab();});
+  pn.querySelectorAll('[data-reset]').forEach(b=>b.onclick=()=>{const ser=seriesList(),s0=ser.find(s=>s.key==='cur')||ser[0];if(!s0)return;setManual(s0.sig,+b.dataset.reset,null);renderTab();});
+  const wrap=$('radarwrap'),tip=$('rtip');if(!wrap)return;
+  const show=el=>{const ser=seriesList(),s=ser[+el.dataset.s],i=+el.dataset.d;if(!s)return;
+    const head=VIEW13?SL().dims[i]:SL().boards[i],val=VIEW13?s.v[i].toFixed(1):s.st.b[i].toFixed(2);
+    const body=VIEW13?esc(s.sc.basis[i])+(s.man[i]!==undefined?`<br>${SL().manual}${lang==='en'?': ':'：'}${s.v[i].toFixed(1)}　${SL().auto} ${s.sc.auto[i].toFixed(1)}`:''):BOARDS[i].map(d=>`${SL().dims[d]} ${s.v[d].toFixed(1)}`).join('<br>');
+    const same=ser.filter(x=>x!==s&&Math.abs((VIEW13?x.v[i]:x.st.b[i])-(VIEW13?s.v[i]:s.st.b[i]))<1e-9);
+    const others=ser.length>1?`<div class="hint" style="margin-top:4px">${ser.map(x=>`<span style="color:${x.col}">●</span> ${esc(x.name)} ${VIEW13?x.v[i].toFixed(1):x.st.b[i].toFixed(2)}`).join('<br>')}</div>`:'';
+    tip.innerHTML=`<div style="color:${s.col};font-weight:600">${esc(s.name)}${same.length?`<span class="hint">　＋${same.length}</span>`:''}</div><div><strong>${head}　${val}</strong></div><div class="hint">${body}</div>${others}`;tip.hidden=false;
+    const wr=wrap.getBoundingClientRect(),er=el.getBoundingClientRect();let x=er.left-wr.left+er.width/2+12,y=er.top-wr.top+er.height/2+12;
+    const tw=Math.min(280,wr.width-16);tip.style.maxWidth=tw+'px';if(x+tw>wr.width)x=Math.max(8,er.left-wr.left-tw-6);tip.style.left=x+'px';tip.style.top=y+'px';};
+  wrap.querySelectorAll('.hit').forEach(el=>{el.addEventListener('pointerenter',()=>show(el));el.addEventListener('click',e=>{e.stopPropagation();show(el);});el.addEventListener('focus',()=>show(el));
+    el.addEventListener('pointerleave',e=>{if(e.pointerType==='mouse')tip.hidden=true;});el.addEventListener('blur',()=>{tip.hidden=true;});});
+  wrap.addEventListener('click',()=>{tip.hidden=true;});
+}
+
+/* ---------- UI ---------- */
+const $=id=>document.getElementById(id);
+let C=null,SEL={luck:0,year:new Date().getFullYear()},TAB=0,DL=null;
+let FORM={name:'',gender:'m',date:'',time:'',city:'北京',country:'cn',prov:'0',lon:'',tz:'8',dst:false,zi:'newday'};
+try{const f=JSON.parse(localStorage.getItem('bazi.form')||'null');if(f)FORM=Object.assign(FORM,f);}catch(e){}
+function cityName(ct){return nm(ct);}
+function locOf(f){if(f.city&&f.city!=='__manual'){const ct=CITIES.find(x=>x.zh===f.city);if(ct)return {c:ct.country.id,p:ct.country.provs.indexOf(ct.prov)};}
+  const c=GEO.find(x=>x.id===f.country)?f.country:'other',g=GEO.find(x=>x.id===c);return {c,p:Math.min(+(f.prov||0),Math.max(0,g.provs.length-1))};}
+function fillProv(cid,pi){const g=GEO.find(x=>x.id===cid)||GEO[0],el=$('f-prov');
+  el.innerHTML=g.provs.length?g.provs.map((p,i)=>`<option value="${i}"${i===pi?' selected':''}>${esc(nm(p))}</option>`).join(''):`<option value="0">${esc(T('manualCity'))}</option>`;el.disabled=!g.provs.length;}
+function fillCity(cid,pi,city){const g=GEO.find(x=>x.id===cid),p=g&&g.provs[pi],el=$('f-city');
+  const has=p&&p.cities.some(x=>x[0]===city);
+  el.innerHTML=(p?p.cities:[]).map((x,i)=>`<option value="${esc(x[0])}"${(has?x[0]===city:i===0&&city!=='__manual')?' selected':''}>${esc(nm({zh:x[0],en:x[1],ja:x[4]}))}</option>`).join('')+`<option value="__manual"${!p||city==='__manual'?' selected':''}>${esc(T('manualCity'))}</option>`;
+  $('f-manual').style.display=el.value==='__manual'?'block':'none';}
+function buildForm(){
+  const loc=locOf(FORM);
+  $('form').innerHTML=`
+  <label for="f-name">${T('name')}</label><input type="text" id="f-name" value="${esc(FORM.name)}" autocomplete="off">
+  <label>${T('gender')}</label><div class="seg"><label><input type="radio" name="g" value="m"${FORM.gender==='m'?' checked':''}>${T('male')}</label><label><input type="radio" name="g" value="f"${FORM.gender==='f'?' checked':''}>${T('female')}</label></div>
+  <label for="f-date">${T('date')}</label><input type="date" id="f-date" value="${FORM.date}" min="1900-01-01" max="2100-12-31">
+  <label for="f-time">${T('time')}</label><input type="time" id="f-time" value="${FORM.time}">
+  <label>${T('place')}</label>
+  <label for="f-country" class="sublab">${T('countryL')}</label><select id="f-country">${GEO.map(c=>`<option value="${c.id}"${c.id===loc.c?' selected':''}>${esc(nm(c))}</option>`).join('')}</select>
+  <label for="f-prov" class="sublab">${T('provL')}</label><select id="f-prov"></select>
+  <label for="f-city" class="sublab">${T('cityL')}</label><select id="f-city"></select>
+  <div id="f-manual" style="display:${FORM.city==='__manual'?'block':'none'}"><div class="row2"><div><label for="f-lon">${T('lon')}</label><input type="number" id="f-lon" step="0.01" value="${esc(FORM.lon)}"></div><div><label for="f-tz">${T('tz')}</label><input type="number" id="f-tz" step="0.5" value="${esc(FORM.tz)}"></div></div></div>
+  <label class="check" id="f-dstwrap"><input type="checkbox" id="f-dst"${FORM.dst?' checked':''}><span>${T('dst')}</span></label>
+  <div class="hint">${T('dstAuto')}</div>
+  <label for="f-zi">${T('zi')}</label><select id="f-zi"><option value="newday"${FORM.zi==='newday'?' selected':''}>${T('ziA')}</option><option value="late"${FORM.zi==='late'?' selected':''}>${T('ziB')}</option></select>
+  <div class="err" id="f-err" role="alert"></div>
+  <div class="btns"><button class="btn primary" id="b-cast">${T('cast')}</button><button class="btn" id="b-save">${T('save')}</button></div>
+  <div class="saved" id="savedbox"></div>`;
+  fillProv(loc.c,loc.p);fillCity(loc.c,loc.p,FORM.city);
+  $('f-country').onchange=()=>{const c=$('f-country').value,g=GEO.find(x=>x.id===c);fillProv(c,0);fillCity(c,0,g&&g.provs[0]?g.provs[0].cities[0][0]:'__manual');};
+  $('f-prov').onchange=()=>{const c=$('f-country').value,pi=+$('f-prov').value,g=GEO.find(x=>x.id===c);fillCity(c,pi,g&&g.provs[pi]?g.provs[pi].cities[0][0]:'__manual');};
+  $('f-city').onchange=()=>{$('f-manual').style.display=$('f-city').value==='__manual'?'block':'none';};
+  $('b-cast').onclick=cast;$('b-save').onclick=saveChart;
+  ['f-name','f-date','f-time','f-lon','f-tz'].forEach(id=>$(id).addEventListener('keydown',e=>{if(e.key==='Enter')cast();}));
+  renderSaved();
+}
+function readForm(){
+  const g=document.querySelector('input[name=g]:checked');
+  FORM={name:$('f-name').value.trim(),gender:g?g.value:'m',date:$('f-date').value,time:$('f-time').value,city:$('f-city').value,country:$('f-country').value,prov:$('f-prov').value,lon:$('f-lon').value,tz:$('f-tz').value,dst:$('f-dst').checked,zi:$('f-zi').value};
+  try{localStorage.setItem('bazi.form',JSON.stringify(FORM));}catch(e){}
+  return FORM;
+}
+function toInput(f){
+  const dm=/^(\d{4})-(\d{2})-(\d{2})$/.exec(f.date||''),tm=/^(\d{1,2}):(\d{2})/.exec(f.time||'');
+  if(!dm||!tm)return {err:T('errDate')};
+  const y=+dm[1],m=+dm[2],d=+dm[3],hh=+tm[1],mi=+tm[2];
+  if(y<1900||y>2100||m<1||m>12||d<1||d>31||hh>23||mi>59)return {err:T('errDate')};
+  let lon,tz,cn,placeName;
+  if(f.city==='__manual'){lon=parseFloat(f.lon);tz=parseFloat(f.tz);cn=false;placeName=`${isNaN(lon)?'':lon.toFixed(2)}°`;
+    if(isNaN(lon)||lon<-180||lon>180||isNaN(tz)||tz<-12||tz>14)return {err:T('errLon')};}
+  else{const ct=CITIES.find(x=>x.zh===f.city)||CITIES.find(x=>x.zh==='北京');lon=ct.lon;tz=ct.tz;cn=ct.g==='cn';placeName=cityName(ct);}
+  return {y,m,d,hh,mi,lon,tz,cn,dstManual:!!f.dst,zi:f.zi,gender:f.gender,name:f.name,placeName};
+}
+function cast(){
+  const f=readForm(),inp=toInput(f);
+  if(inp.err){$('f-err').textContent=inp.err;return;}
+  $('f-err').textContent='';
+  C=compute(inp);C.sig=sigOf(f);
+  const cy=new Date().getFullYear();let li=C.luck.findIndex(l=>cy>=l.startY&&cy<l.startY+10);if(li<0)li=cy<C.luck[0].startY?0:C.luck.length-1;
+  SEL={luck:li,year:(cy>=C.luck[li].startY&&cy<C.luck[li].startY+10)?cy:C.luck[li].startY};
+  renderAll();
+}
+function renderChart(){$('chartwrap').innerHTML=svgChart(C,SEL);}
+function renderStrips(){
+  const p=pal(),cy=new Date().getFullYear();
+  $('luckstrip').innerHTML=C.luck.map((l,k)=>{const r=rateP(l,C);return `<button class="lc" aria-pressed="${k===SEL.luck}" data-k="${k}"><div class="gz"><span style="color:${p.el[SE(l.s)]}">${S[l.s]}</span><span style="color:${p.el[BE[l.b]]}">${B[l.b]}</span></div><div class="meta">${cy>=l.startY&&cy<l.startY+10?'<span style="color:var(--seal)">● </span>':''}${l.startY}</div><div class="meta"><span class="dot" style="background:${RC[r.i]}"></span>${l.age}${T('ageU')}</div></button>`;}).join('');
+  const l=C.luck[SEL.luck],ys=[];for(let y=l.startY;y<l.startY+10;y++)ys.push(y);
+  $('yearstrip').innerHTML=ys.map(y=>{const pp={s:mod(y-4,10),b:mod(y-4,12)},r=rateP(pp,C);return `<button class="lc" aria-pressed="${y===SEL.year}" data-y="${y}"><div class="gz"><span style="color:${p.el[SE(pp.s)]}">${S[pp.s]}</span><span style="color:${p.el[BE[pp.b]]}">${B[pp.b]}</span></div><div class="meta">${y===cy?'<span style="color:var(--seal)">● </span>':''}${y}</div><div class="meta"><span class="dot" style="background:${RC[r.i]}"></span>${L().rating[r.i]}</div></button>`;}).join('');
+  $('luckstrip').querySelectorAll('button').forEach(b=>b.onclick=()=>{SEL.luck=+b.dataset.k;const L0=C.luck[SEL.luck];SEL.year=(cy>=L0.startY&&cy<L0.startY+10)?cy:L0.startY;renderChart();renderStrips();if(TAB===3)renderTab();});
+  $('yearstrip').querySelectorAll('button').forEach(b=>b.onclick=()=>{SEL.year=+b.dataset.y;renderChart();renderStrips();if(TAB===3)renderTab();});
+}
+function renderTab(){
+  const f=[tabBasic,tabStructure,tabPattern,tabFortune,tabDomains,tabApply,tabScore][TAB];
+  $('tabpanel').innerHTML=f(C,SEL);if(TAB===6)bindScore();
+}
+function renderTabs(){
+  $('tabs').innerHTML=L().tabs.map((t,k)=>`<button role="tab" id="tab${k}" aria-selected="${k===TAB}" tabindex="${k===TAB?0:-1}">${t}</button>`).join('');
+  $('tabs').querySelectorAll('button').forEach((b,k)=>{b.onclick=()=>{TAB=k;renderTabs();renderTab();};
+    b.onkeydown=e=>{if(e.key==='ArrowRight'||e.key==='ArrowLeft'){TAB=mod(TAB+(e.key==='ArrowRight'?1:-1),7);renderTabs();renderTab();$('tab'+TAB).focus();}};});
+  $('tabpanel').setAttribute('aria-labelledby','tab'+TAB);
+}
+function renderLayers(){
+  const items=[['roots','lyRoots'],['stem','lyStem'],['he','lyHe'],['ch','lyCh']];
+  $('layers').innerHTML=items.map(([k,t])=>`<label class="chip"><input type="checkbox" data-l="${k}"${layers[k]?' checked':''}>${T(t)}</label>`).join('');
+  $('layers').querySelectorAll('input').forEach(i=>i.onchange=()=>{layers[i.dataset.l]=i.checked;renderChart();});
+  const p=pal();
+  $('legend').innerHTML=[0,1,2,3,4].map(e=>`<span><svg width="14" height="14" viewBox="0 0 24 24">${ELI[e](p.el[e],p.dark?'#1D1E22':'#FFFDF8')}</svg>${L().el[e]}</span>`).join('')+
+   `<span><svg width="26" height="8"><line x1="0" y1="4" x2="26" y2="4" stroke="${p.muted}" stroke-width="1.7"/></svg>${T('lgStrong')}</span><span><svg width="26" height="8"><line x1="0" y1="4" x2="26" y2="4" stroke="${p.muted}" stroke-width="1.3" stroke-dasharray="4 3"/></svg>${T('lgWeak')}</span>`+
+   `<span><svg width="26" height="8"><line x1="0" y1="4" x2="26" y2="4" stroke="${p.he}" stroke-width="1.4"/></svg>${T('lgHe')}</span><span><svg width="26" height="8"><line x1="0" y1="4" x2="26" y2="4" stroke="${p.ch}" stroke-width="1.4"/></svg>${T('lgCh')}</span>`;
+}
+function renderStatic(){
+  document.documentElement.lang=lang==='zh'?'zh-Hans':lang;
+  document.title=T('title');$('t-title').textContent=T('title');$('t-sub').textContent=T('sub');
+  $('t-luck').textContent=T('luckH');$('t-years').textContent=T('yearsH');$('t-disc').textContent=T('disc');
+  $('b-png').textContent=T('png');$('b-svg').textContent=T('svg');
+  document.querySelectorAll('.lang button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.lang===lang));
+}
+function renderAll(){renderStatic();renderLayers();if(!C){$('chartwrap').innerHTML=`<div class="empty">${esc(T('emptyHint'))}</div>`;return;}renderChart();renderStrips();renderTabs();renderTab();}
+/* saved charts */
+function getSaved(){try{return JSON.parse(localStorage.getItem('bazi.saved.v1')||'[]');}catch(e){return [];}}
+function setSaved(a){try{localStorage.setItem('bazi.saved.v1',JSON.stringify(a));}catch(e){}}
+function saveChart(){const f=readForm(),a=getSaved(),sig=sigOf(f);const label=(f.name||T('savedName'))+' '+f.date+' '+f.time;const rest=a.filter(e=>sigOf(e.f)!==sig);rest.unshift({label,f,manual:getMan()[sig]||{}});setSaved(rest.slice(0,30));renderSaved();if(TAB===6)renderTab();}
+function renderSaved(){const a=getSaved(),box=$('savedbox');if(!box)return;if(!a.length){box.innerHTML='';return;}
+  box.innerHTML=`<h3>${T('saved')}</h3><ul>${a.map((s,k)=>`<li><span>${esc(s.label)}</span><span><button data-k="${k}" class="ld">${T('load')}</button><button data-k="${k}" class="del">${T('del')}</button></span></li>`).join('')}</ul>`;
+  box.querySelectorAll('.ld').forEach(b=>b.onclick=()=>{const e=getSaved()[+b.dataset.k];FORM=Object.assign({},e.f);if(e.manual&&Object.keys(e.manual).length){const m=getMan();m[sigOf(e.f)]=e.manual;setMan(m);}buildForm();cast();});
+  box.querySelectorAll('.del').forEach(b=>b.onclick=()=>{const x=getSaved();x.splice(+b.dataset.k,1);setSaved(x);renderSaved();if(TAB===6)renderTab();});}
+/* export */
+function exportName(ext){return `bazi-${(C.inp.name||'chart').replace(/[^\w\u4e00-\u9fff\u3040-\u30ff-]/g,'')}-${C.inp.y}${String(C.inp.m).padStart(2,'0')}${String(C.inp.d).padStart(2,'0')}.${ext}`;}
+function svgString(scale){const el=$('chartsvg');if(!el)return null;const vb=el.getAttribute('viewBox').split(' ').map(Number);const cl=el.cloneNode(true);cl.setAttribute('width',vb[2]*scale);cl.setAttribute('height',vb[3]*scale);cl.removeAttribute('id');return new XMLSerializer().serializeToString(cl);}
+function composedSVG(scale){
+  const chart=svgChart(C,SEL),ser=seriesList(),rad=radarSVG(ser,VIEW13,false),tab=tableSVG(ser);
+  const vb=x=>x.match(/viewBox="0 0 ([\d.]+) ([\d.]+)"/).slice(1).map(Number);
+  const [w1,h1]=vb(chart),[w2,h2]=vb(rad),[w3,h3]=vb(tab),W=800,g=16,H=h1+g+h2+g+h3;
+  const nest=(x,px,py,w,h)=>x.replace('<svg ',`<svg x="${px}" y="${py}" width="${w}" height="${h}" `).replace(' id="chartsvg"','');
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${W*scale}" height="${H*scale}" viewBox="0 0 ${W} ${H}"><rect width="${W}" height="${H}" fill="${pal().dark?'#141518':'#ECE8DF'}"/>${nest(chart,0,0,w1,h1)}${nest(rad,(W-w2)/2,h1+g,w2,h2)}${nest(tab,0,h1+g*2+h2,w3,h3)}</svg>`;
+}
+async function doExport(kind){
+  if(!DL||!C)return;const btn=$(kind==='png'?'b-png':'b-svg');
+  try{
+    let data;
+    if(kind==='svg')data=composedSVG(1);
+    else{const s=composedSVG(2),img=new Image();await new Promise((res,rej)=>{img.onload=res;img.onerror=rej;img.src='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(s);});
+      const cv=document.createElement('canvas');cv.width=img.width;cv.height=img.height;cv.getContext('2d').drawImage(img,0,0);data=await new Promise(r=>cv.toBlob(r,'image/png'));}
+    await DL.save({filename:exportName(kind),data});
+  }catch(e){if(e&&(e.code==='unavailable'||e.code==='not_granted')){$('b-png').hidden=true;$('b-svg').hidden=true;}}
+}
+$('b-png').onclick=()=>doExport('png');$('b-svg').onclick=()=>doExport('svg');
+document.querySelectorAll('.lang button').forEach(b=>b.onclick=()=>{lang=b.dataset.lang;try{localStorage.setItem('bazi.lang',lang);}catch(e){}readForm();buildForm();const inp=toInput(FORM);if(C&&!inp.err)C=compute(inp);renderAll();});
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change',()=>renderAll());
+let RZ=null,RW=window.innerWidth;window.addEventListener('resize',()=>{clearTimeout(RZ);RZ=setTimeout(()=>{if(TAB===6&&C&&Math.abs(window.innerWidth-RW)>40){RW=window.innerWidth;renderTab();}},200);});
+new MutationObserver(()=>renderAll()).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
+buildForm();renderStatic();renderLayers();if(FORM.date&&FORM.time)cast();else $('chartwrap').innerHTML=`<div class="empty">${esc(T('emptyHint'))}</div>`;
+(async()=>{try{if(window.claude&&typeof window.claude.use==='function'){DL=await window.claude.use('downloads');if(DL){$('b-png').hidden=false;$('b-svg').hidden=false;}}}catch(e){}})();
+if(document.fonts&&document.fonts.ready)document.fonts.ready.then(()=>{if(C)renderChart();});
+</script>
+</body>
+</html>
