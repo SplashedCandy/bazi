@@ -72,6 +72,29 @@ main{min-width:0}
 .saved li button{font:inherit;font-size:12px;background:none;border:0;color:var(--accent);cursor:pointer;padding:2px 4px}
 .saved li button.del{color:var(--muted)}
 .empty{padding:72px 24px;text-align:center;color:var(--muted);font-size:15px}
+.tipcard{margin-top:16px;border-top:1px dashed var(--line);padding-top:12px;text-align:center}
+.tipcard h3{font-size:15px;margin:0 0 4px}
+.tipcard p{font-size:13px;margin:0 0 10px;line-height:1.6}
+.tipcard img{width:160px;height:auto;max-width:100%;border-radius:8px;background:#fff;padding:6px;display:block;margin:0 auto 6px}
+.tipbar{display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin-top:12px;padding:10px 14px;border:1px solid var(--line);border-radius:10px;background:var(--panel);font-size:14px}
+.tipbar[hidden]{display:none}
+@media (max-width:640px){
+  table.stack thead{display:none}
+  table.stack,table.stack tbody,table.stack tr{display:block;width:100%}
+  table.stack tr{border:1px solid var(--line);border-radius:10px;padding:8px 12px;margin:0 0 10px;background:var(--panel)}
+  table.stack tr.now{border-color:var(--seal);box-shadow:0 0 0 1px var(--seal) inset}
+  table.stack tr.now td{background:none}
+  table.stack td{display:grid;grid-template-columns:76px minmax(0,1fr);gap:10px;border:0;padding:4px 0}
+  table.stack td::before{content:attr(data-l);color:var(--muted);font-size:12px;padding-top:2px}
+}
+.gloss{border:1px solid var(--line);border-radius:12px;padding:10px 16px 6px;background:var(--panel);margin:12px 0 18px}
+.gloss summary{cursor:pointer;font-weight:600;padding:4px 0;color:var(--ink)}
+.gloss summary::marker{color:var(--seal)}
+.gloss p{max-width:900px}
+.real{border-left:3px solid var(--seal);padding:4px 0 4px 12px;margin:10px 0 16px;max-width:900px;line-height:1.8}
+.real strong{color:var(--seal);font-weight:600}
+.mean{font-size:13px;margin-top:4px;line-height:1.6}
+.mean strong{color:var(--seal);font-weight:600}
 .err{color:var(--seal);font-size:13px;margin-top:8px;min-height:1em}
 .chartcard{padding:0;overflow:hidden}
 .charthead{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;padding:12px 16px;border-bottom:1px solid var(--line)}
@@ -91,9 +114,16 @@ main{min-width:0}
 .lc .dot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:4px;vertical-align:middle}
 .sect{margin-top:18px}
 .sect h2{font-size:15px;font-weight:600;margin:0 0 8px}
-.tabs{display:flex;gap:4px;flex-wrap:wrap;border-bottom:1px solid var(--line);margin:26px 0 0}
-.tabs button{font:inherit;font-size:14px;background:none;border:0;border-bottom:2px solid transparent;padding:10px 12px;color:var(--muted);cursor:pointer;margin-bottom:-1px}
-.tabs button[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--seal)}
+.tabs{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;display:flex;gap:8px;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;background:var(--bg);padding:10px 2px;margin:26px 0 0;border-bottom:1px solid var(--line);transition:box-shadow .2s}
+.tabs::-webkit-scrollbar{display:none}
+.tabs.stuck{box-shadow:0 8px 14px -10px rgba(0,0,0,.35)}
+.tabs button{flex:0 0 auto;font:inherit;font-size:14.5px;border:1px solid var(--line);background:var(--panel);color:var(--ink);border-radius:999px;padding:7px 16px;cursor:pointer;white-space:nowrap}
+.tabs button:hover{border-color:var(--seal)}
+.tabs button[aria-selected="true"]{background:var(--seal);border-color:var(--seal);color:var(--seal-ink)}
+.tabs button .no{display:inline-block;font-size:12px;opacity:.7;margin-right:6px}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:30;background:var(--bg)}
+.date3{display:grid;grid-template-columns:1.25fr 1fr 1fr;gap:6px}
+.form .date3 select{padding:8px 6px}
 .tabpanel{padding:20px 2px 0}
 .tabpanel h3{font-size:16px;font-weight:600;margin:22px 0 8px}
 .tabpanel h3:first-child{margin-top:4px}
@@ -167,16 +197,21 @@ table.tbl{border-collapse:collapse;font-size:14px;min-width:100%;margin:4px 0 8p
         <div class="chartscroll" id="chartwrap"></div>
         <div class="legend" id="legend"></div>
       </section>
+      <div class="tipbar" id="tipbar" hidden><span id="tipbar-t"></span><span class="btns" style="margin:0"><button class="btn" id="tipbar-see"></button><button class="btn" id="tipbar-x"></button></span></div>
       <section class="sect"><h2 id="t-luck"></h2><div class="strip" id="luckstrip"></div></section>
       <section class="sect"><h2 id="t-years"></h2><div class="strip" id="yearstrip"></div></section>
     </main>
   </div>
-  <nav class="tabs" role="tablist" id="tabs"></nav>
+  <div id="tabsAnchor"></div><nav class="tabs" role="tablist" id="tabs"></nav>
   <section class="tabpanel" id="tabpanel" role="tabpanel"></section>
   <p class="note" id="t-disc"></p>
 </div>
 <script>
 "use strict";
+/* 打赏设置：把支付宝收款码图片命名为 alipay-qr.png，与 index.html 放在同一目录即可。
+   url 为可选项：若将收款码解析出的网址（https://qr.alipay.com/...）填入，手机用户可直接点击按钮跳转支付宝。 */
+const TIP={img:'alipay-qr.png',url:''};
+let TIPOK=false;
 const S='甲乙丙丁戊己庚辛壬癸'.split(''), B='子丑寅卯辰巳午未申酉戌亥'.split('');
 const SE=s=>Math.floor(s/2), BE=[4,2,0,0,2,1,1,2,3,3,2,4];
 const HID=[[9],[5,9,7],[0,2,4],[1],[4,1,9],[2,4,6],[3,5],[5,3,1],[6,8,4],[7],[4,7,3],[8,0]];
@@ -197,7 +232,7 @@ const STEMHE_EL=[2,3,4,0,1];
 const pk=(a,b)=>a<b?a+'-'+b:b+'-'+a;
 
 const GEO=[
-{id:'cn',zh:'中国',ja:'中国',en:'China',tz:8,provs:[
+{id:'cn',zh:'中国',ja:'中国',en:'China',mode:'city',tz:8,provs:[
  {zh:'北京市',en:'Beijing',cities:[['北京','Beijing',116.40]]},{zh:'天津市',en:'Tianjin',cities:[['天津','Tianjin',117.20]]},
  {zh:'上海市',en:'Shanghai',cities:[['上海','Shanghai',121.47]]},{zh:'重庆市',en:'Chongqing',cities:[['重庆','Chongqing',106.55]]},
  {zh:'河北省',en:'Hebei',cities:[['石家庄','Shijiazhuang',114.51],['唐山','Tangshan',118.18],['保定','Baoding',115.46],['邯郸','Handan',114.49],['秦皇岛','Qinhuangdao',119.60]]},
@@ -227,43 +262,109 @@ const GEO=[
  {zh:'青海省',en:'Qinghai',cities:[['西宁','Xining',101.78]]},
  {zh:'宁夏回族自治区',en:'Ningxia',cities:[['银川','Yinchuan',106.23]]},
  {zh:'新疆维吾尔自治区',en:'Xinjiang',cities:[['乌鲁木齐','Urumqi',87.62],['喀什','Kashgar',75.99]]}]},
-{id:'hk',zh:'中国香港',ja:'香港',en:'Hong Kong',tz:8,provs:[{zh:'香港',en:'Hong Kong',cities:[['香港','Hong Kong',114.17]]}]},
-{id:'mo',zh:'中国澳门',ja:'マカオ',en:'Macau',tz:8,provs:[{zh:'澳门',ja:'マカオ',en:'Macau',cities:[['澳门','Macau',113.54,undefined,'マカオ']]}]},
-{id:'tw',zh:'中国台湾',ja:'台湾',en:'Taiwan',tz:8,provs:[{zh:'台湾',en:'Taiwan',cities:[['台北','Taipei',121.56],['高雄','Kaohsiung',120.30]]}]},
-{id:'jp',zh:'日本',ja:'日本',en:'Japan',tz:9,provs:[
- {zh:'北海道',en:'Hokkaido',cities:[['札幌','Sapporo',141.35]]},{zh:'东京都',ja:'東京都',en:'Tokyo',cities:[['东京','Tokyo',139.69,undefined,'東京']]},
- {zh:'神奈川县',ja:'神奈川県',en:'Kanagawa',cities:[['横滨','Yokohama',139.64,undefined,'横浜']]},{zh:'爱知县',ja:'愛知県',en:'Aichi',cities:[['名古屋','Nagoya',136.91]]},
- {zh:'京都府',en:'Kyoto',cities:[['京都','Kyoto',135.77]]},{zh:'大阪府',en:'Osaka',cities:[['大阪','Osaka',135.50]]},{zh:'福冈县',ja:'福岡県',en:'Fukuoka',cities:[['福冈','Fukuoka',130.40,undefined,'福岡']]}]},
-{id:'kr',zh:'韩国',ja:'韓国',en:'South Korea',tz:9,provs:[{zh:'首尔特别市',ja:'ソウル特別市',en:'Seoul',cities:[['首尔','Seoul',126.98,undefined,'ソウル']]},{zh:'釜山广域市',ja:'釜山広域市',en:'Busan',cities:[['釜山','Busan',129.08]]}]},
-{id:'sg',zh:'新加坡',ja:'シンガポール',en:'Singapore',tz:8,provs:[{zh:'新加坡',ja:'シンガポール',en:'Singapore',cities:[['新加坡','Singapore',103.82,undefined,'シンガポール']]}]},
-{id:'my',zh:'马来西亚',ja:'マレーシア',en:'Malaysia',tz:8,provs:[{zh:'吉隆坡联邦直辖区',ja:'クアラルンプール',en:'Kuala Lumpur',cities:[['吉隆坡','Kuala Lumpur',101.69,undefined,'クアラルンプール']]}]},
-{id:'th',zh:'泰国',ja:'タイ',en:'Thailand',tz:7,provs:[{zh:'曼谷',ja:'バンコク',en:'Bangkok',cities:[['曼谷','Bangkok',100.50,undefined,'バンコク']]}]},
-{id:'vn',zh:'越南',ja:'ベトナム',en:'Vietnam',tz:7,provs:[{zh:'河内',ja:'ハノイ',en:'Hanoi',cities:[['河内','Hanoi',105.85,undefined,'ハノイ']]},{zh:'胡志明市',ja:'ホーチミン市',en:'Ho Chi Minh City',cities:[['胡志明市','Ho Chi Minh City',106.70,undefined,'ホーチミン']]}]},
-{id:'id',zh:'印度尼西亚',ja:'インドネシア',en:'Indonesia',tz:7,provs:[{zh:'雅加达首都特区',ja:'ジャカルタ首都特別州',en:'Jakarta',cities:[['雅加达','Jakarta',106.85,undefined,'ジャカルタ']]}]},
-{id:'ph',zh:'菲律宾',ja:'フィリピン',en:'Philippines',tz:8,provs:[{zh:'马尼拉大都会',ja:'マニラ首都圏',en:'Metro Manila',cities:[['马尼拉','Manila',120.98,undefined,'マニラ']]}]},
-{id:'in',zh:'印度',ja:'インド',en:'India',tz:5.5,provs:[{zh:'马哈拉施特拉邦',ja:'マハーラーシュトラ州',en:'Maharashtra',cities:[['孟买','Mumbai',72.88,undefined,'ムンバイ']]}]},
-{id:'ae',zh:'阿联酋',ja:'アラブ首長国連邦',en:'United Arab Emirates',tz:4,provs:[{zh:'迪拜酋长国',ja:'ドバイ首長国',en:'Dubai',cities:[['迪拜','Dubai',55.27,undefined,'ドバイ']]}]},
-{id:'au',zh:'澳大利亚',ja:'オーストラリア',en:'Australia',tz:10,provs:[{zh:'新南威尔士州',ja:'ニューサウスウェールズ州',en:'New South Wales',cities:[['悉尼','Sydney',151.21,undefined,'シドニー']]},{zh:'维多利亚州',ja:'ビクトリア州',en:'Victoria',cities:[['墨尔本','Melbourne',144.96,undefined,'メルボルン']]}]},
-{id:'nz',zh:'新西兰',ja:'ニュージーランド',en:'New Zealand',tz:12,provs:[{zh:'奥克兰大区',ja:'オークランド地方',en:'Auckland',cities:[['奥克兰','Auckland',174.76,undefined,'オークランド']]}]},
-{id:'ru',zh:'俄罗斯',ja:'ロシア',en:'Russia',tz:3,provs:[{zh:'莫斯科',ja:'モスクワ',en:'Moscow',cities:[['莫斯科','Moscow',37.62,undefined,'モスクワ']]}]},
-{id:'gb',zh:'英国',ja:'イギリス',en:'United Kingdom',tz:0,provs:[{zh:'英格兰',ja:'イングランド',en:'England',cities:[['伦敦','London',-0.13,undefined,'ロンドン']]}]},
-{id:'fr',zh:'法国',ja:'フランス',en:'France',tz:1,provs:[{zh:'法兰西岛',ja:'イル＝ド＝フランス',en:'Île-de-France',cities:[['巴黎','Paris',2.35,undefined,'パリ']]},{zh:'普罗旺斯',ja:'プロヴァンス',en:'Provence',cities:[['阿维尼翁','Avignon',4.81,undefined,'アヴィニョン']]}]},
-{id:'de',zh:'德国',ja:'ドイツ',en:'Germany',tz:1,provs:[{zh:'柏林州',ja:'ベルリン州',en:'Berlin',cities:[['柏林','Berlin',13.40,undefined,'ベルリン']]},{zh:'黑森州',ja:'ヘッセン州',en:'Hesse',cities:[['法兰克福','Frankfurt',8.68,undefined,'フランクフルト']]}]},
-{id:'ch',zh:'瑞士',ja:'スイス',en:'Switzerland',tz:1,provs:[{zh:'苏黎世州',ja:'チューリッヒ州',en:'Zurich',cities:[['苏黎世','Zurich',8.54,undefined,'チューリッヒ']]}]},
-{id:'us',zh:'美国',ja:'アメリカ',en:'United States',tz:-5,provs:[
- {zh:'纽约州',ja:'ニューヨーク州',en:'New York',cities:[['纽约','New York',-74.01,-5,'ニューヨーク']]},{zh:'马萨诸塞州',ja:'マサチューセッツ州',en:'Massachusetts',cities:[['波士顿','Boston',-71.06,-5,'ボストン']]},
- {zh:'伊利诺伊州',ja:'イリノイ州',en:'Illinois',cities:[['芝加哥','Chicago',-87.63,-6,'シカゴ']]},
- {zh:'加利福尼亚州',ja:'カリフォルニア州',en:'California',cities:[['洛杉矶','Los Angeles',-118.24,-8,'ロサンゼルス'],['旧金山','San Francisco',-122.42,-8,'サンフランシスコ']]},
- {zh:'华盛顿州',ja:'ワシントン州',en:'Washington',cities:[['西雅图','Seattle',-122.33,-8,'シアトル']]}]},
-{id:'ca',zh:'加拿大',ja:'カナダ',en:'Canada',tz:-5,provs:[{zh:'安大略省',ja:'オンタリオ州',en:'Ontario',cities:[['多伦多','Toronto',-79.38,-5,'トロント']]},{zh:'不列颠哥伦比亚省',ja:'ブリティッシュコロンビア州',en:'British Columbia',cities:[['温哥华','Vancouver',-123.12,-8,'バンクーバー']]}]},
-{id:'other',zh:'其他国家或地区',ja:'その他の国・地域',en:'Other country or region',tz:0,provs:[]}];
-const CITIES=[];GEO.forEach(c=>c.provs.forEach(p=>p.cities.forEach(x=>CITIES.push({g:c.id,zh:x[0],en:x[1],lon:x[2],tz:x[3]!==undefined?x[3]:c.tz,ja:x[4]||x[0],prov:p,country:c}))));
+{id:'hk',zh:'中国香港',ja:'香港',en:'Hong Kong',mode:'country',lon:114.17,tz:8},
+{id:'mo',zh:'中国澳门',ja:'マカオ',en:'Macau',mode:'country',lon:113.54,tz:8},
+{id:'tw',zh:'中国台湾',ja:'台湾',en:'Taiwan',mode:'country',lon:121.56,tz:8},
+{id:'jp',zh:'日本',ja:'日本',en:'Japan',mode:'prov',tz:9,provs:[
+ ['北海道','北海道','Hokkaido',141.35],['青森县','青森県','Aomori',140.74],['岩手县','岩手県','Iwate',141.15],['宫城县','宮城県','Miyagi',140.87],['秋田县','秋田県','Akita',140.10],
+ ['山形县','山形県','Yamagata',140.36],['福岛县','福島県','Fukushima',140.47],['茨城县','茨城県','Ibaraki',140.45],['栃木县','栃木県','Tochigi',139.88],['群马县','群馬県','Gunma',139.06],
+ ['埼玉县','埼玉県','Saitama',139.65],['千叶县','千葉県','Chiba',140.12],['东京都','東京都','Tokyo',139.69],['神奈川县','神奈川県','Kanagawa',139.64],['新潟县','新潟県','Niigata',139.02],
+ ['富山县','富山県','Toyama',137.21],['石川县','石川県','Ishikawa',136.63],['福井县','福井県','Fukui',136.22],['山梨县','山梨県','Yamanashi',138.57],['长野县','長野県','Nagano',138.18],
+ ['岐阜县','岐阜県','Gifu',136.72],['静冈县','静岡県','Shizuoka',138.38],['爱知县','愛知県','Aichi',136.91],['三重县','三重県','Mie',136.51],['滋贺县','滋賀県','Shiga',135.87],
+ ['京都府','京都府','Kyoto',135.77],['大阪府','大阪府','Osaka',135.50],['兵库县','兵庫県','Hyogo',135.18],['奈良县','奈良県','Nara',135.83],['和歌山县','和歌山県','Wakayama',135.17],
+ ['鸟取县','鳥取県','Tottori',134.24],['岛根县','島根県','Shimane',133.05],['冈山县','岡山県','Okayama',133.93],['广岛县','広島県','Hiroshima',132.46],['山口县','山口県','Yamaguchi',131.47],
+ ['德岛县','徳島県','Tokushima',134.56],['香川县','香川県','Kagawa',134.04],['爱媛县','愛媛県','Ehime',132.77],['高知县','高知県','Kochi',133.53],['福冈县','福岡県','Fukuoka',130.40],
+ ['佐贺县','佐賀県','Saga',130.30],['长崎县','長崎県','Nagasaki',129.87],['熊本县','熊本県','Kumamoto',130.74],['大分县','大分県','Oita',131.61],['宫崎县','宮崎県','Miyazaki',131.42],
+ ['鹿儿岛县','鹿児島県','Kagoshima',130.56],['冲绳县','沖縄県','Okinawa',127.68]]},
+{id:'us',zh:'美国',ja:'アメリカ',en:'United States',mode:'prov',tz:-5,provs:[
+ ['阿拉巴马州','アラバマ州','Alabama',-86.80,-6,'AL'],['阿拉斯加州','アラスカ州','Alaska',-149.90,-9,'AK'],['亚利桑那州','アリゾナ州','Arizona',-112.07,-7,'AZ'],['阿肯色州','アーカンソー州','Arkansas',-92.29,-6,'AR'],
+ ['加利福尼亚州','カリフォルニア州','California',-118.24,-8,'CA'],['科罗拉多州','コロラド州','Colorado',-104.99,-7,'CO'],['康涅狄格州','コネチカット州','Connecticut',-72.68,-5,'CT'],['特拉华州','デラウェア州','Delaware',-75.55,-5,'DE'],
+ ['佛罗里达州','フロリダ州','Florida',-80.19,-5,'FL'],['佐治亚州','ジョージア州','Georgia',-84.39,-5,'GA'],['夏威夷州','ハワイ州','Hawaii',-157.86,-10,'HI'],['爱达荷州','アイダホ州','Idaho',-116.20,-7,'ID'],
+ ['伊利诺伊州','イリノイ州','Illinois',-87.63,-6,'IL'],['印第安纳州','インディアナ州','Indiana',-86.16,-5,'IN'],['艾奥瓦州','アイオワ州','Iowa',-93.61,-6,'IA'],['堪萨斯州','カンザス州','Kansas',-97.34,-6,'KS'],
+ ['肯塔基州','ケンタッキー州','Kentucky',-85.76,-5,'KY'],['路易斯安那州','ルイジアナ州','Louisiana',-90.07,-6,'LA'],['缅因州','メイン州','Maine',-70.26,-5,'ME'],['马里兰州','メリーランド州','Maryland',-76.61,-5,'MD'],
+ ['马萨诸塞州','マサチューセッツ州','Massachusetts',-71.06,-5,'MA'],['密歇根州','ミシガン州','Michigan',-83.05,-5,'MI'],['明尼苏达州','ミネソタ州','Minnesota',-93.27,-6,'MN'],['密西西比州','ミシシッピ州','Mississippi',-90.18,-6,'MS'],
+ ['密苏里州','ミズーリ州','Missouri',-90.20,-6,'MO'],['蒙大拿州','モンタナ州','Montana',-108.50,-7,'MT'],['内布拉斯加州','ネブラスカ州','Nebraska',-95.94,-6,'NE'],['内华达州','ネバダ州','Nevada',-115.14,-8,'NV'],
+ ['新罕布什尔州','ニューハンプシャー州','New Hampshire',-71.46,-5,'NH'],['新泽西州','ニュージャージー州','New Jersey',-74.17,-5,'NJ'],['新墨西哥州','ニューメキシコ州','New Mexico',-106.65,-7,'NM'],['纽约州','ニューヨーク州','New York',-74.01,-5,'NY'],
+ ['北卡罗来纳州','ノースカロライナ州','North Carolina',-80.84,-5,'NC'],['北达科他州','ノースダコタ州','North Dakota',-96.79,-6,'ND'],['俄亥俄州','オハイオ州','Ohio',-83.00,-5,'OH'],['俄克拉何马州','オクラホマ州','Oklahoma',-97.52,-6,'OK'],
+ ['俄勒冈州','オレゴン州','Oregon',-122.68,-8,'OR'],['宾夕法尼亚州','ペンシルベニア州','Pennsylvania',-75.17,-5,'PA'],['罗得岛州','ロードアイランド州','Rhode Island',-71.41,-5,'RI'],['南卡罗来纳州','サウスカロライナ州','South Carolina',-81.03,-5,'SC'],
+ ['南达科他州','サウスダコタ州','South Dakota',-96.73,-6,'SD'],['田纳西州','テネシー州','Tennessee',-86.78,-6,'TN'],['得克萨斯州','テキサス州','Texas',-95.37,-6,'TX'],['犹他州','ユタ州','Utah',-111.89,-7,'UT'],
+ ['佛蒙特州','バーモント州','Vermont',-73.21,-5,'VT'],['弗吉尼亚州','バージニア州','Virginia',-77.44,-5,'VA'],['华盛顿州','ワシントン州','Washington',-122.33,-8,'WA'],['西弗吉尼亚州','ウェストバージニア州','West Virginia',-81.63,-5,'WV'],
+ ['威斯康星州','ウィスコンシン州','Wisconsin',-87.91,-6,'WI'],['怀俄明州','ワイオミング州','Wyoming',-104.82,-7,'WY'],['华盛顿哥伦比亚特区','ワシントンD.C.','District of Columbia',-77.04,-5,'DC']]},
+{id:'kr',zh:'韩国',ja:'韓国',en:'South Korea',mode:'country',lon:126.98,tz:9},
+{id:'mn',zh:'蒙古',ja:'モンゴル',en:'Mongolia',mode:'country',lon:106.91,tz:8},
+{id:'sg',zh:'新加坡',ja:'シンガポール',en:'Singapore',mode:'country',lon:103.82,tz:8},
+{id:'my',zh:'马来西亚',ja:'マレーシア',en:'Malaysia',mode:'country',lon:101.69,tz:8},
+{id:'th',zh:'泰国',ja:'タイ',en:'Thailand',mode:'country',lon:100.50,tz:7},
+{id:'vn',zh:'越南',ja:'ベトナム',en:'Vietnam',mode:'country',lon:105.85,tz:7},
+{id:'kh',zh:'柬埔寨',ja:'カンボジア',en:'Cambodia',mode:'country',lon:104.92,tz:7},
+{id:'mm',zh:'缅甸',ja:'ミャンマー',en:'Myanmar',mode:'country',lon:96.16,tz:6.5},
+{id:'id',zh:'印度尼西亚',ja:'インドネシア',en:'Indonesia',mode:'country',lon:106.85,tz:7,multi:1},
+{id:'ph',zh:'菲律宾',ja:'フィリピン',en:'Philippines',mode:'country',lon:120.98,tz:8},
+{id:'in',zh:'印度',ja:'インド',en:'India',mode:'country',lon:77.21,tz:5.5},
+{id:'pk',zh:'巴基斯坦',ja:'パキスタン',en:'Pakistan',mode:'country',lon:73.05,tz:5},
+{id:'ae',zh:'阿联酋',ja:'アラブ首長国連邦',en:'United Arab Emirates',mode:'country',lon:55.27,tz:4},
+{id:'sa',zh:'沙特阿拉伯',ja:'サウジアラビア',en:'Saudi Arabia',mode:'country',lon:46.68,tz:3},
+{id:'il',zh:'以色列',ja:'イスラエル',en:'Israel',mode:'country',lon:34.78,tz:2},
+{id:'tr',zh:'土耳其',ja:'トルコ',en:'Türkiye',mode:'country',lon:28.98,tz:3},
+{id:'au',zh:'澳大利亚',ja:'オーストラリア',en:'Australia',mode:'country',lon:151.21,tz:10,multi:1},
+{id:'nz',zh:'新西兰',ja:'ニュージーランド',en:'New Zealand',mode:'country',lon:174.76,tz:12},
+{id:'ru',zh:'俄罗斯',ja:'ロシア',en:'Russia',mode:'country',lon:37.62,tz:3,multi:1},
+{id:'gb',zh:'英国',ja:'イギリス',en:'United Kingdom',mode:'country',lon:-0.13,tz:0},
+{id:'ie',zh:'爱尔兰',ja:'アイルランド',en:'Ireland',mode:'country',lon:-6.26,tz:0},
+{id:'fr',zh:'法国',ja:'フランス',en:'France',mode:'country',lon:2.35,tz:1},
+{id:'de',zh:'德国',ja:'ドイツ',en:'Germany',mode:'country',lon:13.40,tz:1},
+{id:'nl',zh:'荷兰',ja:'オランダ',en:'Netherlands',mode:'country',lon:4.90,tz:1},
+{id:'be',zh:'比利时',ja:'ベルギー',en:'Belgium',mode:'country',lon:4.35,tz:1},
+{id:'ch',zh:'瑞士',ja:'スイス',en:'Switzerland',mode:'country',lon:8.54,tz:1},
+{id:'at',zh:'奥地利',ja:'オーストリア',en:'Austria',mode:'country',lon:16.37,tz:1},
+{id:'it',zh:'意大利',ja:'イタリア',en:'Italy',mode:'country',lon:12.50,tz:1},
+{id:'es',zh:'西班牙',ja:'スペイン',en:'Spain',mode:'country',lon:-3.70,tz:1},
+{id:'pt',zh:'葡萄牙',ja:'ポルトガル',en:'Portugal',mode:'country',lon:-9.14,tz:0},
+{id:'se',zh:'瑞典',ja:'スウェーデン',en:'Sweden',mode:'country',lon:18.07,tz:1},
+{id:'no',zh:'挪威',ja:'ノルウェー',en:'Norway',mode:'country',lon:10.75,tz:1},
+{id:'dk',zh:'丹麦',ja:'デンマーク',en:'Denmark',mode:'country',lon:12.57,tz:1},
+{id:'fi',zh:'芬兰',ja:'フィンランド',en:'Finland',mode:'country',lon:24.94,tz:2},
+{id:'pl',zh:'波兰',ja:'ポーランド',en:'Poland',mode:'country',lon:21.01,tz:1},
+{id:'cz',zh:'捷克',ja:'チェコ',en:'Czechia',mode:'country',lon:14.42,tz:1},
+{id:'gr',zh:'希腊',ja:'ギリシャ',en:'Greece',mode:'country',lon:23.73,tz:2},
+{id:'ca',zh:'加拿大',ja:'カナダ',en:'Canada',mode:'country',lon:-79.38,tz:-5,multi:1},
+{id:'mx',zh:'墨西哥',ja:'メキシコ',en:'Mexico',mode:'country',lon:-99.13,tz:-6,multi:1},
+{id:'br',zh:'巴西',ja:'ブラジル',en:'Brazil',mode:'country',lon:-46.63,tz:-3,multi:1},
+{id:'ar',zh:'阿根廷',ja:'アルゼンチン',en:'Argentina',mode:'country',lon:-58.38,tz:-3},
+{id:'cl',zh:'智利',ja:'チリ',en:'Chile',mode:'country',lon:-70.65,tz:-4},
+{id:'za',zh:'南非',ja:'南アフリカ',en:'South Africa',mode:'country',lon:28.05,tz:2},
+{id:'eg',zh:'埃及',ja:'エジプト',en:'Egypt',mode:'country',lon:31.24,tz:2},
+{id:'ng',zh:'尼日利亚',ja:'ナイジェリア',en:'Nigeria',mode:'country',lon:3.38,tz:1},
+{id:'ke',zh:'肯尼亚',ja:'ケニア',en:'Kenya',mode:'country',lon:36.82,tz:3},
+{id:'other',zh:'其他国家或地区',ja:'その他の国・地域',en:'Other country or region',mode:'manual',tz:0}];
+GEO.forEach(g=>{if(g.mode==='prov')g.provs=g.provs.map(a=>({zh:a[0],ja:a[1],en:a[2],lon:a[3],tz:a[4]!==undefined?a[4]:g.tz,code:a[5]}));});
+const LOCS={};
+GEO.forEach(g=>{
+  if(g.mode==='city')g.provs.forEach(p=>p.cities.forEach(x=>{LOCS[x[0]]={g:g.id,zh:x[0],en:x[1],ja:x[4]||x[0],lon:x[2],tz:x[3]!==undefined?x[3]:g.tz,country:g,prov:p};}));
+  else if(g.mode==='prov')g.provs.forEach(p=>{LOCS[g.id+'-'+p.zh]={g:g.id,zh:p.zh,ja:p.ja,en:p.en,lon:p.lon,tz:p.tz,code:p.code,country:g,prov:p};});
+  else if(g.mode==='country')LOCS['ct-'+g.id]={g:g.id,zh:g.zh,ja:g.ja,en:g.en,lon:g.lon,tz:g.tz,country:g};});
+const LEGACY={'东京':'jp-东京都','横滨':'jp-神奈川县','名古屋':'jp-爱知县','京都':'jp-京都府','大阪':'jp-大阪府','福冈':'jp-福冈县','札幌':'jp-北海道',
+ '纽约':'us-纽约州','波士顿':'us-马萨诸塞州','芝加哥':'us-伊利诺伊州','洛杉矶':'us-加利福尼亚州','旧金山':'us-加利福尼亚州','西雅图':'us-华盛顿州',
+ '香港':'ct-hk','澳门':'ct-mo','台北':'ct-tw','高雄':'ct-tw','首尔':'ct-kr','釜山':'ct-kr','新加坡':'ct-sg','吉隆坡':'ct-my','曼谷':'ct-th','河内':'ct-vn','胡志明市':'ct-vn',
+ '雅加达':'ct-id','马尼拉':'ct-ph','孟买':'ct-in','迪拜':'ct-ae','悉尼':'ct-au','墨尔本':'ct-au','奥克兰':'ct-nz','莫斯科':'ct-ru','伦敦':'ct-gb','巴黎':'ct-fr','阿维尼翁':'ct-fr',
+ '柏林':'ct-de','法兰克福':'ct-de','苏黎世':'ct-ch','多伦多':'ct-ca','温哥华':'ct-ca'};
+const normKey=k=>LOCS[k]?k:(LEGACY[k]||k);
+const findLoc=k=>LOCS[normKey(k)]||null;
 const nm=o=>lang==='en'?o.en:lang==='ja'?(o.ja||o.zh):o.zh;
+function usDst(y,m,d,hh,mi,code){
+  if(code==='AZ'||code==='HI')return false;if(code==='IN'&&y<2006)return false;if(y<1967)return null;
+  const sun=(mo,n)=>{const f=new Date(Date.UTC(y,mo-1,1)).getUTCDay();return 1+((7-f)%7)+7*(n-1);};
+  const last=mo=>{const dim=new Date(Date.UTC(y,mo,0)).getUTCDate(),wd=new Date(Date.UTC(y,mo-1,dim)).getUTCDay();return dim-wd;};
+  let s,e;
+  if(y>=2007){s=[3,sun(3,2)];e=[11,sun(11,1)];}else if(y>=1987){s=[4,sun(4,1)];e=[10,last(10)];}
+  else if(y===1974){s=[1,6];e=[10,last(10)];}else if(y===1975){s=[2,23];e=[10,last(10)];}else{s=[4,last(4)];e=[10,last(10)];}
+  const t=Date.UTC(y,m-1,d,hh,mi);return t>=Date.UTC(y,s[0]-1,s[1],2)&&t<Date.UTC(y,e[0]-1,e[1],2);}
+
 
 const LANGS={
 zh:{
  title:'八字命盘',sub:'输入出生信息，自动排盘并按传统规则分析',name:'姓名（可选）',gender:'性别',male:'男',female:'女',date:'出生日期',time:'出生时间（当地钟表时间）',
- place:'出生地',manualOpt:'手动输入经度与时区',lon:'经度（东经为正）',tz:'时区（UTC＋）',dst:'出生时正在实行夏令时（＋1小时）',dstAuto:'中国1986至1991年的夏令时会自动校正。',
+ place:'出生地',manualOpt:'手动输入经度与时区',lon:'经度（东经为正）',tz:'时区（UTC＋）',dst:'出生时正在实行夏令时（＋1小时）',dstAuto:'中国1986至1991年、美国1967年以后的夏令时会自动校正（亚利桑那州、夏威夷州不实行夏令时）。其他国家请按实际情况勾选。',
  zi:'子时口径',ziA:'23点换日',ziB:'早晚子时',cast:'排盘',save:'保存命盘',saved:'已保存的命盘',load:'载入',del:'删除',savedName:'命盘',
  png:'导出图片',svg:'导出矢量图',savedOk:'已导出',declined:'已取消导出',
  errDate:'请填写有效的出生日期与时间。',errLon:'请填写有效的经度与时区。',
@@ -328,11 +429,11 @@ zh:{
  a_reg:'无悔策略',regT:'综合判断有利的五行为{a}，不利的五行为{b}。不论采用哪种方法，以下做法都成立：{acts}。以共识指导行动，以实际经历检验分歧。',
  a_meth:'方法说明',methT:'排盘以节气定年月，日柱按儒略日推算，时柱按真太阳时定。格局按天干通根与得令的势力取最强者，用神并列扶抑、格局、调候三法。各法结论不同时，建议以过往经历的验证结果为准，而不是选择最吉利的解释。',
  dateFmt:(y,m,d)=>`${y}年${m}月${d}日`,timeFmt:(h,mi)=>`${h}时${String(mi).padStart(2,'0')}分`,
- cityGroups:{cn:'中国大陆',hk:'港澳台',as:'日本与亚洲',ot:'欧美与其他',mn:'其他'},manualCity:'手动输入',emptyHint:'请在左侧填写出生日期、时间与出生地，然后点击“排盘”。',countryL:'国家或地区',provL:'省份',cityL:'城市'
+ cityGroups:{cn:'中国大陆',hk:'港澳台',as:'日本与亚洲',ot:'欧美与其他',mn:'其他'},manualCity:'手动输入',chooseL:'请选择',errPlace:'请选择出生地，或勾选手动输入经度与时区。',yL:'年',moL:'月',dL:'日',prefL:'都道府县',stateL:'州',manualT:'手动输入经度与时区（更精确）',ctryHint:'仅选择国家时，以首都或主要城市的经度计算真太阳时；如需更精确，可勾选手动输入。',ctryMulti:'该国横跨多个时区，此处以首都或主要城市为准；出生地不在该时区时，请勾选手动输入经度与时区。',tipT:'随喜打赏',tipD:'本工具免费使用。每次测算建议打赏1元，完全自愿，不影响任何功能。',tipScan:'支付宝扫码打赏',tipMobile:'手机浏览时，可长按保存收款码，再在支付宝“扫一扫”中从相册识别。',tipOpen:'打开支付宝打赏',tipBar:'本次测算若对您有帮助，欢迎打赏1元。',tipSee:'查看收款码',tipClose:'本次不再提示',emptyHint:'请在左侧填写出生日期、时间与出生地，然后点击“排盘”。',countryL:'国家或地区',provL:'省份',cityL:'城市'
 },
 ja:{
  title:'八字命盤',sub:'生年月日時と出生地から命盤を作成し、伝統的な規則で分析します',name:'名前（任意）',gender:'性別',male:'男性',female:'女性',date:'生年月日',time:'出生時刻（現地の時計時刻）',
- place:'出生地',manualOpt:'経度とタイムゾーンを手入力',lon:'経度（東経を正）',tz:'タイムゾーン（UTC＋）',dst:'出生時に夏時間を実施（＋1時間）',dstAuto:'中国の1986〜1991年の夏時間は自動で補正します。',
+ place:'出生地',manualOpt:'経度とタイムゾーンを手入力',lon:'経度（東経を正）',tz:'タイムゾーン（UTC＋）',dst:'出生時に夏時間を実施（＋1時間）',dstAuto:'中国の1986〜1991年、アメリカの1967年以降の夏時間は自動で補正します（アリゾナ州・ハワイ州は夏時間なし）。その他の国は実際に応じてチェックしてください。',
  zi:'子の刻の扱い',ziA:'23時で日替わり',ziB:'早子・夜子',cast:'命盤を作成',save:'命盤を保存',saved:'保存した命盤',load:'読込',del:'削除',savedName:'命盤',
  png:'画像を書き出し',svg:'SVGを書き出し',savedOk:'書き出しました',declined:'書き出しを取り消しました',
  errDate:'有効な生年月日と時刻を入力してください。',errLon:'有効な経度とタイムゾーンを入力してください。',
@@ -397,11 +498,11 @@ ja:{
  a_reg:'後悔しない方針',regT:'総合的に有利な五行は{a}、不利な五行は{b}です。どの方法を採っても成り立つ行動：{acts}。共通点で行動し、相違は実際の経験で検証しましょう。',
  a_meth:'方法について',methT:'年と月は節気、日柱はユリウス日、時柱は真太陽時で定めています。格局は天干の通根と得令から最も勢力のある干を取り、用神は扶抑・格局・調候の三法を並べています。結論が分かれる場合は、最も吉な解釈ではなく、過去の経験による検証を優先してください。',
  dateFmt:(y,m,d)=>`${y}年${m}月${d}日`,timeFmt:(h,mi)=>`${h}時${String(mi).padStart(2,'0')}分`,
- cityGroups:{cn:'中国大陸',hk:'香港・マカオ・台湾',as:'日本とアジア',ot:'欧米その他',mn:'その他'},manualCity:'手入力',emptyHint:'左側で生年月日・時刻・出生地を入力し、「命盤を作成」を押してください。',countryL:'国・地域',provL:'都道府県・省・州',cityL:'都市'
+ cityGroups:{cn:'中国大陸',hk:'香港・マカオ・台湾',as:'日本とアジア',ot:'欧米その他',mn:'その他'},manualCity:'手入力',chooseL:'選択してください',errPlace:'出生地を選択するか、経度とタイムゾーンを手入力してください。',yL:'年',moL:'月',dL:'日',prefL:'都道府県',stateL:'州',manualT:'経度とタイムゾーンを手入力（より正確）',ctryHint:'国のみを選んだ場合は、首都または主要都市の経度で真太陽時を計算します。より正確にするには手入力を選んでください。',ctryMulti:'この国は複数のタイムゾーンにまたがるため、首都または主要都市を基準にしています。異なる地域の場合は経度とタイムゾーンを手入力してください。',tipT:'投げ銭（任意）',tipD:'本ツールは無料です。1回の鑑定につき1元の投げ銭をお願いしています。任意で、機能の制限はありません。',tipScan:'Alipayで読み取って送金',tipMobile:'スマートフォンの場合は、コードを長押しして保存し、Alipayの「スキャン」でアルバムから読み取ってください。',tipOpen:'Alipayを開く',tipBar:'今回の鑑定がお役に立てば、1元の投げ銭を歓迎します。',tipSee:'コードを見る',tipClose:'今回は表示しない',emptyHint:'左側で生年月日・時刻・出生地を入力し、「命盤を作成」を押してください。',countryL:'国・地域',provL:'都道府県・省・州',cityL:'都市'
 },
 en:{
  title:'BaZi Chart',sub:'Enter birth details to cast the Four Pillars and read them by traditional rules',name:'Name (optional)',gender:'Gender',male:'Male',female:'Female',date:'Birth date',time:'Birth time (local clock)',
- place:'Birthplace',manualOpt:'Enter longitude and time zone',lon:'Longitude (east positive)',tz:'Time zone (UTC+)',dst:'Daylight saving was in effect (+1 h)',dstAuto:'China’s daylight saving from 1986 to 1991 is corrected automatically.',
+ place:'Birthplace',manualOpt:'Enter longitude and time zone',lon:'Longitude (east positive)',tz:'Time zone (UTC+)',dst:'Daylight saving was in effect (+1 h)',dstAuto:'Daylight saving is corrected automatically for China (1986 to 1991) and the United States (from 1967; Arizona and Hawaii do not observe it). For other countries, tick the box if it applied.',
  zi:'Zi hour rule',ziA:'New day at 23:00',ziB:'Early and late Zi',cast:'Cast chart',save:'Save chart',saved:'Saved charts',load:'Load',del:'Delete',savedName:'Chart',
  png:'Export image',svg:'Export SVG',savedOk:'Exported',declined:'Export cancelled',
  errDate:'Enter a valid birth date and time.',errLon:'Enter a valid longitude and time zone.',
@@ -467,7 +568,7 @@ en:{
  a_reg:'No-regret moves',regT:'Overall favorable elements: {a}; unfavorable: {b}. These moves hold whichever method you follow: {acts}. Act on what the methods share, and test their differences against real experience.',
  a_meth:'About the method',methT:'Year and month follow the solar terms, the day pillar follows the Julian day count, and the hour uses true solar time. The pattern takes the stem with the strongest roots and seasonal support; the useful element is shown under all three methods. When they disagree, prefer the reading your past experience confirms rather than the most auspicious one.',
  dateFmt:(y,m,d)=>`${y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`,timeFmt:(h,mi)=>`${String(h).padStart(2,'0')}:${String(mi).padStart(2,'0')}`,
- cityGroups:{cn:'Mainland China',hk:'Hong Kong, Macau, Taiwan',as:'Japan and Asia',ot:'Europe, Americas and more',mn:'Other'},manualCity:'Enter manually',emptyHint:'Enter the birth date, time and place on the left, then select “Cast chart”.',countryL:'Country or region',provL:'Province or state',cityL:'City'
+ cityGroups:{cn:'Mainland China',hk:'Hong Kong, Macau, Taiwan',as:'Japan and Asia',ot:'Europe, Americas and more',mn:'Other'},manualCity:'Enter manually',chooseL:'Select',errPlace:'Select a birthplace, or enter longitude and time zone manually.',yL:'Year',moL:'Month',dL:'Day',prefL:'Prefecture',stateL:'State',manualT:'Enter longitude and time zone manually (more precise)',ctryHint:'With only a country selected, true solar time uses the longitude of the capital or main city. Enter longitude manually for more precision.',ctryMulti:'This country spans several time zones; the capital or main city is used. If the birthplace was elsewhere, enter longitude and time zone manually.',tipT:'Leave a tip',tipD:'This tool is free. A tip of 1 yuan per reading is suggested; it is entirely optional and nothing is locked.',tipScan:'Scan with Alipay',tipMobile:'On a phone, long-press to save the code, then open Alipay’s Scan and choose the image from your album.',tipOpen:'Open Alipay',tipBar:'If this reading helped, a 1 yuan tip is welcome.',tipSee:'Show code',tipClose:'Not now',emptyHint:'Enter the birth date, time and place on the left, then select “Cast chart”.',countryL:'Country or region',provL:'Province or state',cityL:'City'
 }};
 let lang='zh';
 try{const l=localStorage.getItem('bazi.lang');if(l&&LANGS[l])lang=l;}catch(e){}
@@ -495,10 +596,10 @@ const fmtD=ms=>{const d=new Date(ms);return L().dateFmt(d.getUTCFullYear(),d.get
 
 /* ---------- chart ---------- */
 function compute(inp){
-  const {y,m,d,hh,mi,tz,lon,cn,dstManual,zi,gender}=inp;
+  const {y,m,d,hh,mi,tz,lon,cn,us,dstManual,zi,gender}=inp;
   let dst=false;
   if(cn&&CN_DST[y]){const r=CN_DST[y],t=Date.UTC(y,m-1,d,hh,mi);dst=t>=Date.UTC(y,r[0]-1,r[1],2)&&t<Date.UTC(y,r[2]-1,r[3],2);}
-  if(!cn&&dstManual)dst=true;
+  if(us){const a=usDst(y,m,d,hh,mi,us);dst=a===null?!!dstManual:a;}else if(!cn&&dstManual)dst=true;
   const utc=Date.UTC(y,m-1,d,hh,mi)-(tz*60+(dst?60:0))*60000, jd=msToJd(utc);
   const E=eot(utc), tstMs=utc+lon*4*60000+E*60000, tst=new Date(tstMs);
   const ty=tst.getUTCFullYear(),tm=tst.getUTCMonth()+1,td=tst.getUTCDate(),th=tst.getUTCHours()+tst.getUTCMinutes()/60;
@@ -672,7 +773,10 @@ function rateP(p,c){const es=RS[c.role[SE(p.s)]];
   const h=HID[p.b];let num=0,den=0;h.forEach((x,k)=>{num+=RS[c.role[SE(x)]]*HW[k];den+=HW[k];});let eb=num/den;
   if(c.tiao===4){if([0,11,4,1].includes(p.b))eb+=0.4;if([5,6,7,10].includes(p.b))eb-=0.4;}
   if(c.tiao===1){if([5,6,7,10].includes(p.b))eb+=0.4;if([0,11,4,1].includes(p.b))eb-=0.4;}
-  const sc=0.5*es+0.5*eb;return {sc,i:sc>=1?0:sc>=0.35?1:sc>-0.15?2:sc>-0.9?3:4};}
+  let adj=0;const bs=c.P.map(q=>q.b);
+  [SANHE,SANHUI].forEach(G=>G.forEach(g=>{const tri=g.slice(0,3);if(tri.includes(p.b)&&tri.filter(t=>t!==p.b).every(o=>bs.includes(o)))adj+=0.35*RS[c.role[g[3]]];}));
+  if(Math.abs(p.b-bs[2])===6)adj-=0.15;if(Math.abs(p.b-bs[1])===6)adj-=0.15;
+  const sc=0.5*es+0.5*eb+adj;return {sc,i:sc>=1?0:sc>=0.35?1:sc>-0.15?2:sc>-0.9?3:4};}
 function flowNow(){const now=Date.now(),jd=msToJd(now),d=new Date();const yp=yearPillarAt(jd,d.getFullYear()),mp=monthPillarAt(jd,yp.s),dp=dayPillar(d.getFullYear(),d.getMonth()+1,d.getDate());return {yp,mp,dp,year:yp.y};}
 
 /* ---------- drawing ---------- */
@@ -788,7 +892,7 @@ const RC=['var(--r-good)','var(--r-ok)','var(--r-even)','var(--r-tight)','var(--
 const chip=i=>`<span class="rate" style="color:${RC[i]}">${L().rating[i]}</span>`;
 const elc=e=>{const p=pal();return `<span style="color:${p.el[e]};white-space:nowrap">${L().el[e]}</span>`;};
 const gz=pp=>{const p=pal();return `<span class="gzc"><span style="color:${p.el[SE(pp.s)]}">${S[pp.s]}</span><span style="color:${p.el[BE[pp.b]]}">${B[pp.b]}</span></span>`;};
-const tbl=(head,rows,cls)=>`<div class="tblwrap"><table class="tbl"><thead><tr>${head.map(h=>`<th>${h}</th>`).join('')}</tr></thead><tbody>${rows.map(r=>`<tr${cls&&cls(r)?' class="now"':''}>${(r.cells||r).map(x=>`<td>${x}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
+const tbl=(head,rows,cls,stack)=>`<div class="tblwrap"><table class="tbl${stack?' stack':''}"><thead><tr>${head.map(h=>`<th>${h}</th>`).join('')}</tr></thead><tbody>${rows.map(r=>`<tr${cls&&cls(r)?' class="now"':''}>${(r.cells||r).map((x,i)=>stack?`<td data-l="${esc(String(head[i]).replace(/<[^>]+>/g,''))}"><div>${x}</div></td>`:`<td>${x}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
 const kv=rows=>`<div class="tblwrap"><table class="tbl"><tbody>${rows.map(r=>`<tr><th>${r[0]}</th><td>${r[1]}</td></tr>`).join('')}</tbody></table></div>`;
 const bar=(v,col)=>`<div class="bar"><i style="width:${Math.round(Math.min(1,v)*100)}%;background:${col}"></i></div>`;
 const catOf=(c,e)=>mod(e-c.dmE,5);
@@ -814,78 +918,323 @@ function tabBasic(c){
     c.luck.map((l,k)=>[k+1,gz(l),T('rng',{a:l.startY,b:l.startY+9}),T('rng',{a:l.age,b:l.age+9}),L().ten[tg(c.dm,l.s)],L().ten[tg(c.dm,HID[l.b][0])]]));
   return h;
 }
+
+/* ---------- real-world interpretation ---------- */
+const IP={
+zh:{realL:'现实含义',repL:'对本命而言代表',howL:'怎么用',self:'自身',stemOf:'{tg}所代表的{m}',
+ posS:['外部环境与早年','工作与事业环境','自身','成果、子女与晚年'],posB:['外部环境与家族','工作环境','自己与伴侣','成果、子女与晚年'],
+ catS:['同伴与团队','表达与输出','收入与经营','责任与压力','学习与支持'],
+ cls:['身弱并不代表能力弱，而是自身的“能量储备”小于外部要求。现实中常表现为：能做成事，但代价比别人高，恢复所需的时间也更长。在有支持的环境中表现突出，孤立无援时会明显吃力，因此选择平台、团队和合作对象，往往比个人努力本身更重要。',
+  '日主偏弱，自身能量略小于外部要求。多数时候能够应付，但在高强度阶段容易透支；借助团队与支持体系，可以明显提升发挥的稳定性。',
+  '日主中和，自身能量与外部要求大致平衡。现实中适应力较强，顺境逆境都能保持基本状态，运势的影响主要体现在机会多少，而不是能否承受。',
+  '日主偏旺，自身能量较为充足，主见与行动力都较强。需要足够的挑战与输出渠道来发挥能量，否则容易显得固执。',
+  '日主身强，能量充沛、主见强、不愿受约束。需要有足够的责任、挑战或输出渠道来消耗能量，否则容易固执己见或与人争执；适合承担有分量的任务。'],
+ elMain:'生活中占比最大的是{a}类事务，其次是{b}；最稀缺的是{z}。{need}',
+ need:['补足的方向是同伴与团队的支持，以及增强自身的底气。','补足的方向是表达与输出，让能力被看见。','补足的方向是务实的经营与资源积累。','补足的方向是适度的目标、规则与责任，为能量找到方向。','补足的方向是学习、导师关系与休息这些容易被牺牲的部分。'],
+ miss:'原局缺{els}，对应的{mean}需要从运势或后天环境中获得。',
+ tgTop:'{a}与{b}最多，代表{am}与{bm}是生活的主轴；{z}最少，{zm}的渠道相对单一。',tgMissH:'原局缺{gods}：',
+ tgMiss:['缺少可以平起平坐、并肩作战的伙伴','少有竞争者分走资源，但也少有能一起扛事的伙伴','缺少从容、稳定的输出方式','较少锋芒外露的表达，处事偏稳','较少意外之财与投资机会','缺少稳定、按部就班的收入来源','较少外部压力的推动，也较少面对强势对手','缺少明确的制度身份与名分','缺少非常规的灵感与跨领域的思考渠道','缺少正式、稳定的支持来源，例如体制内的庇护或长期导师'],
+ sHe:'{x}与{y}相互牵绊：两方面紧密联结，合力可以协同，也可能彼此牵制。',sCh:'{x}与{y}之间存在拉扯与冲突{adj}。',adjA:'，影响直接而明显',adjD:'；因为隔位，冲击得到缓冲',
+ bHe:'{d}高度联结、相互牵动。',bHeEl:'合出的{el}为{cat}，{cm}类事务因此更加突出。',b_chong:'{d}之间容易出现变动与冲突。',b_xing:'{d}之间易有摩擦与内耗。',b_zixing:'{d}内部易有反复与自我消耗。',
+ b_hai:'{d}之间易有暗中损耗或误解。',b_po:'{d}之间的计划易受阻碍。',bGong:'{d}之间暗藏{mid}（{el}，{cat}），平时不明显，遇到{mid}年或{mid}运时会被引动。',and:'与',
+ rootDm:['自身根基扎实，抗风险能力强','自身根基浅，需要积累资历与资源来加固','自身几乎无根，高度依赖外部支持'],
+ root:['{c}方面的基础稳固而持久','{c}方面有基础但不深，需要后天加固','{c}方面不稳定，时有时无，需要主动建立'],rootGuan:'压力来源稳定而持久，需要长期的应对机制',
+ cliT:['节奏偏慢，较为内敛谨慎，需要外部激励来启动。','节奏偏慢，较为内敛谨慎，需要外部激励来启动。','节奏适中。','生活节奏偏快，状态容易紧绷，行动力强但不易放松。','生活节奏偏快，状态容易紧绷，行动力强但不易放松。'],
+ cliD:['容易犹豫，情绪容易积压。','容易犹豫，情绪容易积压。','','思虑多，容易焦躁。','思虑多，容易焦躁。'],
+ need4:'“润”在现实中对应：充足的睡眠、放慢节奏、安静的环境，以及不以产出为目的的时间。',need1:'“暖”在现实中对应：运动、社交、阳光，以及明确的目标激励。',needN:'寒暖燥湿大致平衡，无需特别调节。',
+ pat:['人生的主线是自立与打拼，重视同伴，也不乏竞争；靠自己的力量站稳脚跟，再借合作扩大成果。','人生的主线是自立与打拼，重视同伴，也不乏竞争；靠自己的力量站稳脚跟，再借合作扩大成果。',
+  '人生的主线是以专业与作品立身，输出从容而稳定，生活品质感强；关键是找到能长期发挥的领域。','人生的主线是才华与突破，创新意识强，敢于挑战既有规则；适合需要变革与创意的领域，但需注意与权威相处的分寸。',
+  '人生的主线是把握机会与流动的资源，眼光灵活、善于交际；适合需要开拓与整合的领域，但需控制风险。','人生的主线是务实与积累，重视稳定的收入与秩序；适合按部就班、长期经营的路径。',
+  '人生的主旋律是在高要求、高压力的环境中成长。这类人往往被推到需要担责、处理难题的位置上，压力既是挑战，也是获得认可的来源；关键不在于避开压力，而在于找到把压力转化为成果和地位的方法。',
+  '人生的主线是在规则与体系中稳步上升，重名誉与信用；适合有清晰晋升路径的组织，守正比冒进更有利。',
+  '人生的主线是独到的思考与跨领域的学识，常有不拘一格的见解；适合研究、策划等需要深度思考的领域。','人生的主线是依靠学识、资历与支持体系发展，得长辈与平台之助；适合重视专业资质与积累的路径。'],
+ yong:'{agree}对本命而言，最有效的补给来自{el}所代表的“{cm}”，具体来说就是：{act}。这些投入的回报，通常高于在其他方面多花同样的力气。',
+ agreeN:['三种方法指向同一个答案，结论的可靠性较高。','两种方法结论一致，判断较为可靠。','各方法结论不一，建议结合实际经历验证。'],
+ howUse:['优先投入，长期坚持','积极利用，作为辅助','顺其自然，不必刻意','有选择地投入，避免透支','不必回避，但要控制总量，并借助用神来承接'],
+ qLi:['支持资源扎实可靠，','支持资源有一定基础，','支持资源不稳定，'],qQing:['而且离你很近，容易调动。','但距离稍远，需要主动争取。','而且藏而不显，需要运势来引出。'],
+ qTip:['可以把它作为长期依靠的方向。','重点是把偶尔的帮助变成稳定的关系，例如定期请益、长期合作，而不是等到需要时才求助。'],
+ flag:{f_mix:'压力来源多头，名分与实权交织，容易左右为难；需要明确优先级。',f_shg:'表达锋芒容易触碰权威与规则，需要注意分寸。',f_xiaoA:'想法与执行相互干扰，容易想得多、做得少。',f_xiaoD:'学习思考与对外输出之间偶有冲突，表现为想得多、做得慢，或者忙于产出、无暇深思；由于有调和空间，可以通过安排节奏来管理。',f_cai:'追求收入容易牺牲学习、声誉或休养。',f_bj:'合作中易有利益之争，金钱往来需要清晰。',f_clean:'格局干净，没有明显的内在矛盾，发挥较为顺畅。'},
+ ratePh:['支持与机会集中，适合扩张与跃升','整体顺畅，适合稳步推进','有得有失，适合积累与调整','投入多、回报慢，宜控制节奏','压力或消耗较大，宜守成与保养'],
+ theme1:'{a}成为这十年的主题，{r}。',theme2:'{a}与{b}成为这十年的主题，{r}。',themeY1:'{a}是这一年的重点，{r}。',themeY2:'{a}与{b}是这一年的重点，{r}。',themeM1:'{a}为重点，{r}。',themeM2:'{a}与{b}为重点，{r}。',
+ curLuck:'当前大运{gz}（{yr}）',
+ iHe:'{d}出现新的联结或合作',iChong:'{d}出现变动',iXing:'{d}易有摩擦与内耗',iHai:'{d}易有暗中损耗或误解',iPo:'{d}的计划易受阻',iBan:'{d}被牵动',iJu:'{el}成局，“{cm}”类事务集中出现',iSHe:'“{cm}”方面出现牵绊或合作',iSCh:'“{cm}”方面出现拉扯',
+ wRole:['财星为喜用，收入与资源能实实在在地帮到自己，可以积极经营。','财星作用中性，财富的高低主要取决于经营方式。','每一份收入都伴随相应的责任与消耗，容易出现收入增长、压力同步增长的情况；更适合以专业声誉换取稳定回报，而不是追逐高风险、高回报的机会。'],
+ pRole:['责任与职位对你是助力，承担更多反而带来成长。','职位与责任的影响中性，地位主要取决于自身的选择。','职位与责任会带来压力，地位的上升往往发生在支持资源到位之后；地位主要来自处理难题的能力，而非资历或关系。'],
+ kRole:['学习对你不是爱好，而是最重要的“充电方式”。','学习与支持的作用中性，按需投入即可。','过度学习或依赖他人支持反而会拖慢行动，宜学以致用。'],kNoRoot:'学习的外部条件不稳定，知识积累更多依靠自学与主动寻找资源。',
+ cWay:'若身处{bad}等行业，可以{way}参与，把行业带来的压力转化为专业价值。',
+ way:['与团队协作的方式','以专业产出与作品的方式','以经营与资源整合的方式','以管理与承担责任的方式','以顾问、研究或支持者的角色'],
+ mPal:'伴侣缘分深，配偶与自己关系紧密。',mStable:'婚姻结构稳定。',mMonth:'事业与家庭高度捆绑，工作压力容易传导到家庭，伴侣也可能深度参与或影响事业；有意识地划定工作与家庭的边界，对关系最有益处。',mChong:'婚姻生活中变动较多，需要更多沟通与包容。',
+ mRole:['伴侣是重要的助力。','','伴侣关系需要投入较多精力与责任。'],
+ kStrongBad:'子女有能力、个性强，养育过程中责任感较重。',kStrong:'子女有能力、有主见。',kHour:'时干为喜用，子女日后可能成为精神上的支持与慰藉。',kNone:'子女缘需要等待运势引动，时间上可能偏晚。',
+ hCare:['情绪疏导与身体的舒展','睡眠质量与心神安定','饮食规律与消化','呼吸系统与皮肤保养','作息规律与精力恢复'],hNeed:'最需要照顾的是{care}。',hHot:'燥热的结构提示睡眠与情绪容易紧绷，规律作息最为直接有效。',hCold:'偏寒的结构提示活力启动较慢，适度运动与保暖有益。',
+ dimM:[['状态容易受外部环境影响，需要稳定的支持来源','基本稳定，遇到大的冲击时需要缓冲','根基稳固，能在变化中保持状态'],
+  ['能量流转不畅，容易卡在某一类事务中','能量流转基本顺畅，但局部存在拉扯','能量流转顺畅，各方面能够相互促进'],
+  ['结构性矛盾较多，需要运势配合才能发挥','格局成立，优劣互见','格局结构好，具备在压力中成事的框架'],
+  ['最需要的资源不稳定，需要主动维护','所需资源有一定基础','所需资源扎实可靠，容易调动'],
+  ['一生运势偏紧，需要长期稳健经营','一生起伏均衡，无明显的长期顺境或逆境','一生运势整体顺畅'],
+  ['中年后宜守成，提早储备资源','中年后有起伏，可以把握其中的高峰','越往后越好，属于后劲型'],
+  ['事业宜借助平台与他人，不宜独自冒险','事业有一定基础，可稳步发展','事业是本命最具优势的领域之一'],
+  ['财富宜稳健积累，不宜冒进','财富可期，宜量力而行','财运较好，可以适度进取'],
+  ['学习条件需要靠自己创造','学习与贵人支持有一定基础','学习能力与贵人支持都较好'],
+  ['婚姻需要更多的沟通与经营','婚姻平稳，需要留意外部因素的影响','婚姻根基稳固'],
+  ['恢复力是短板，需要重视作息与节奏','体质平稳，注意劳逸结合','体质根基较好'],
+  ['面对压力容易被动，宜避免过度承担','抗压能力中等，需要支持来分担','抗压是突出优势，能在高压下保持输出'],
+  ['子女缘偏晚或需要更多投入','子女缘平稳','子女缘较好，子女日后可成为支持']],
+ typeM:['格局与用神扎实，但运势平平。命局本身的质量是主要依靠，适合打好基础、长期经营。','强项与弱项差距明显。适合发挥强项的同时有意识地补足短板，而不是平均用力。','日主根基强但能量流通不足，精力充沛却容易郁积。关键在于找到合适的输出与发挥渠道。','各方面较为均衡，没有明显短板，稳健发展即可。'],
+ meanL:'解读'},
+ja:{realL:'現実的な意味',repL:'本命にとっての意味',howL:'活かし方',self:'自分自身',stemOf:'{tg}が表す{m}',
+ posS:['外部環境と若年期','仕事と事業の環境','自分自身','成果・子ども・晩年'],posB:['外部環境と家系','仕事の環境','自分と配偶者','成果・子ども・晩年'],
+ catS:['仲間とチーム','表現とアウトプット','収入と経営','責任と重圧','学びと支え'],
+ cls:['身弱は能力が低いという意味ではなく、自分の「エネルギーの蓄え」が外部の要求より小さいということです。物事はやり遂げられますが、他の人より代償が大きく、回復にも時間がかかりがちです。支えのある環境では力を発揮し、孤立すると苦しくなるため、基盤・チーム・協力相手の選び方が、個人の努力そのものより重要になります。',
+  '日主はやや弱く、自分のエネルギーが外部の要求をやや下回ります。普段は対応できますが、負荷の高い時期には消耗しやすく、チームや支援体制を活かすことで安定して力を発揮できます。',
+  '日主は中和で、自分のエネルギーと外部の要求がほぼ釣り合っています。順境でも逆境でも基本的な状態を保ちやすく、運勢の影響は「耐えられるか」より「機会の多さ」に表れます。',
+  '日主はやや強く、エネルギーが比較的豊富で、主体性と行動力があります。力を発揮できる挑戦やアウトプットの場がないと、頑固に見えやすくなります。',
+  '日主は身強で、エネルギーが豊富、主張が強く、束縛を嫌います。十分な責任・挑戦・アウトプットの場がないと、意地を張ったり衝突したりしやすいため、重みのある役割が向いています。'],
+ elMain:'生活の中で最も比重が大きいのは{a}に関わる事柄で、次いで{b}です。最も不足しているのは{z}です。{need}',
+ need:['補うべきは仲間とチームの支え、そして自分自身の自信です。','補うべきは表現とアウトプットで、能力を見える形にすることです。','補うべきは堅実な運営と資源の蓄積です。','補うべきは適度な目標・規則・責任で、エネルギーに方向を与えることです。','補うべきは学び・師との関係・休養といった、犠牲にされやすい部分です。'],
+ miss:'原局に{els}が欠けており、対応する{mean}は運勢や後天的な環境から得る必要があります。',
+ tgTop:'{a}と{b}が最も多く、{am}と{bm}が生活の軸です。{z}は最も少なく、{zm}の経路は限られています。',tgMissH:'原局に{gods}がありません：',
+ tgMiss:['対等に並んで戦える仲間が少ない','資源を奪う競争相手は少ないが、一緒に背負う仲間も少ない','落ち着いた安定的なアウトプットの方法が少ない','鋭い自己表現は少なく、物事の進め方は堅実','思わぬ収入や投資の機会は少なめ','安定した着実な収入源が少ない','外からの重圧による後押しが少なく、強い相手と向き合う機会も少ない','明確な制度上の立場や肩書きが少ない','型にとらわれない発想や分野横断の思考の経路が少ない','正式で安定した支え、たとえば組織内の後ろ盾や長期的な師が少ない'],
+ sHe:'{x}と{y}は互いに結びつきます。両者は密接につながり、力を合わせれば相乗効果がある一方、互いを縛ることもあります。',sCh:'{x}と{y}の間に引っ張り合いと衝突があります{adj}。',adjA:'。影響は直接的で明確です',adjD:'。隔位のため衝撃は和らぎます',
+ bHe:'{d}が強く結びつき、互いに影響し合います。',bHeEl:'合して生じる{el}は{cat}で、{cm}に関わる事柄が目立つようになります。',b_chong:'{d}の間に変動や衝突が起こりやすくなります。',b_xing:'{d}の間に摩擦や内部消耗が生じやすくなります。',b_zixing:'{d}の内部で繰り返しや自己消耗が起こりやすくなります。',
+ b_hai:'{d}の間に見えない損失や誤解が生じやすくなります。',b_po:'{d}の間の計画が妨げられやすくなります。',bGong:'{d}の間に{mid}（{el}、{cat}）が潜んでおり、普段は目立ちませんが、{mid}の年や{mid}の運で引き出されます。',and:'と',
+ rootDm:['自分の基盤が堅固で、リスクに強い','自分の基盤が浅く、経歴と資源を積んで補強する必要がある','自分にはほとんど根がなく、外部の支えに大きく依存する'],
+ root:['{c}の面の基盤は堅固で長続きする','{c}の面に基盤はあるが浅く、後天的な補強が必要','{c}の面は不安定で、あったりなかったりするため、自ら築く必要がある'],rootGuan:'重圧の源は安定して長く続くため、長期的な対処の仕組みが必要',
+ cliT:['ペースはゆっくりで、内向的かつ慎重。動き出すには外からの刺激が必要です。','ペースはゆっくりで、内向的かつ慎重。動き出すには外からの刺激が必要です。','ペースは適度です。','生活のペースが速く、緊張しやすく、行動力はあるがリラックスしにくい傾向があります。','生活のペースが速く、緊張しやすく、行動力はあるがリラックスしにくい傾向があります。'],
+ cliD:['迷いやすく、感情をため込みやすい傾向があります。','迷いやすく、感情をため込みやすい傾向があります。','','考えすぎて焦りやすい傾向があります。','考えすぎて焦りやすい傾向があります。'],
+ need4:'「潤い」とは現実には、十分な睡眠、ペースを落とすこと、静かな環境、成果を目的としない時間のことです。',need1:'「温かさ」とは現実には、運動、人との交流、日光、明確な目標による刺激のことです。',needN:'寒暖燥湿はおおむね釣り合っており、特別な調整は不要です。',
+ pat:['人生の軸は自立と奮闘です。仲間を大切にしつつ競争も避けず、自分の力で足場を固めてから協力で成果を広げます。','人生の軸は自立と奮闘です。仲間を大切にしつつ競争も避けず、自分の力で足場を固めてから協力で成果を広げます。',
+  '人生の軸は専門性と作品で身を立てることです。落ち着いて安定的にアウトプットでき、生活の質を大切にします。長く力を発揮できる分野を見つけることが鍵です。','人生の軸は才能と突破です。革新意識が強く、既存のルールに挑む勇気があります。変革や創造が求められる分野に向きますが、権威との付き合い方には節度が必要です。',
+  '人生の軸は機会と流動的な資源をつかむことです。柔軟な視点と社交性があり、開拓と統合が求められる分野に向きますが、リスク管理が欠かせません。','人生の軸は堅実さと積み重ねです。安定した収入と秩序を重んじ、着実に長く経営する道に向きます。',
+  '人生の主旋律は、高い要求と重圧の中で成長することです。責任を担い難題を処理する立場に押し出されやすく、重圧は挑戦であると同時に評価の源でもあります。重圧を避けることではなく、それを成果と地位に変える方法を見つけることが鍵です。',
+  '人生の軸は規則と体系の中で着実に昇ることです。名誉と信用を重んじ、昇進の道筋が明確な組織に向きます。冒険より正道が有利です。',
+  '人生の軸は独自の思考と分野横断の学識です。型にとらわれない見解を持ち、研究や企画など深い思考を要する分野に向きます。','人生の軸は学識・経歴・支援体制による発展です。目上や基盤の助けを得やすく、専門資格と積み重ねを重んじる道に向きます。'],
+ yong:'{agree}本命にとって最も効果的な補給は、{el}が表す「{cm}」から得られます。具体的には、{act}ことです。こうした投資の見返りは、他の面に同じ力を注ぐより大きいのが普通です。',
+ agreeN:['三つの方法が同じ答えを示しており、結論の信頼性は高いと言えます。','二つの方法の結論が一致しており、判断は比較的確かです。','方法によって結論が異なるため、実際の経験と照らし合わせて確かめることをお勧めします。'],
+ howUse:['最優先で投資し、長く続ける','積極的に活用し、補助とする','自然に任せ、無理に求めない','選んで投資し、消耗を避ける','避ける必要はないが総量を抑え、用神で受け止める'],
+ qLi:['支えとなる資源は堅実で頼りになり、','支えとなる資源には一定の基盤があり、','支えとなる資源は不安定で、'],qQing:['しかも身近にあって動かしやすい状態です。','ただし距離がやや遠く、自ら取りに行く必要があります。','しかも表に出ておらず、運勢によって引き出される必要があります。'],
+ qTip:['長期的に頼れる方向として位置づけられます。','大切なのは、たまの助けを安定した関係に変えることです。必要になってから頼るのではなく、定期的な相談や長期的な協力を心がけましょう。'],
+ flag:{f_mix:'重圧の源が複数あり、肩書きと実権が交錯して板挟みになりがちです。優先順位を明確にしましょう。',f_shg:'表現の鋭さが権威や規則に触れやすいため、節度が必要です。',f_xiaoA:'考えと実行が互いに干渉し、考えるばかりで手が動きにくくなります。',f_xiaoD:'学びや思索と外へのアウトプットが時に衝突し、考えすぎて進みが遅い、あるいは作業に追われて深く考えられない形で表れます。調和の余地があるため、ペース配分で管理できます。',f_cai:'収入を追うと、学び・評判・休養を犠牲にしやすくなります。',f_bj:'協力関係で利害の争いが起きやすく、お金のやり取りは明確にしておく必要があります。',f_clean:'格局は清く、目立った内部矛盾はなく、力を発揮しやすい状態です。'},
+ ratePh:['支えと機会が集中し、拡大と飛躍に向く','全体に順調で、着実に進めるのに向く','得るものと失うものがあり、蓄積と調整に向く','投入が多く見返りが遅いため、ペース配分が大切な','重圧や消耗が大きいため、守りと養生を優先すべき'],
+ theme1:'{a}がこの10年のテーマで、{r}時期です。',theme2:'{a}と{b}がこの10年のテーマで、{r}時期です。',themeY1:'{a}がこの年の重点で、{r}年です。',themeY2:'{a}と{b}がこの年の重点で、{r}年です。',themeM1:'{a}が重点で、{r}月です。',themeM2:'{a}と{b}が重点で、{r}月です。',
+ curLuck:'現在の大運{gz}（{yr}）',
+ iHe:'{d}に新たなつながりや協力が生まれる',iChong:'{d}に変動が起こる',iXing:'{d}に摩擦や内部消耗が生じやすい',iHai:'{d}に見えない損失や誤解が生じやすい',iPo:'{d}の計画が妨げられやすい',iBan:'{d}が動かされる',iJu:'{el}が局をなし、「{cm}」に関わる事柄が集中する',iSHe:'「{cm}」の面で結びつきや協力が生じる',iSCh:'「{cm}」の面で引っ張り合いが生じる',
+ wRole:['財星は喜用で、収入や資源が実際に自分を助けるため、積極的に運用してよいでしょう。','財星の作用は中立で、財の多寡は主に運用の仕方によります。','収入の一つひとつに相応の責任と消耗が伴い、収入が増えると重圧も同時に増えやすい構造です。高リスク・高リターンを追うより、専門性と信用で安定した見返りを得る方が向いています。'],
+ pRole:['責任と役職はあなたの助けとなり、多く担うほど成長につながります。','役職と責任の影響は中立で、地位は主に自分の選択によって決まります。','役職と責任は重圧をもたらし、地位の上昇は支えとなる資源が整ってから起こりやすい構造です。地位は経歴や人脈より、難題を処理する力から生まれます。'],
+ kRole:['あなたにとって学びは趣味ではなく、最も重要な「充電方法」です。','学びと支えの作用は中立で、必要に応じて投資すれば十分です。','学びすぎや他人への依存はかえって行動を遅らせるため、学んだことはすぐ活かしましょう。'],kNoRoot:'学びの外的条件は不安定で、知識の蓄積は独学と自ら資源を探すことに頼る部分が大きくなります。',
+ cWay:'{bad}などの業界に身を置く場合は、{way}関わることで、業界がもたらす重圧を専門的な価値に変えられます。',
+ way:['チームで協働する形で','専門的な成果物や作品という形で','経営と資源統合という形で','管理と責任を担う形で','コンサルタント・研究者・支援者という役割で'],
+ mPal:'配偶者との縁が深く、密接な関係を築きやすい構造です。',mStable:'結婚の構造は安定しています。',mMonth:'仕事と家庭が強く結びついており、仕事の重圧が家庭に波及しやすく、配偶者が仕事に深く関わる可能性もあります。仕事と家庭の境界を意識的に引くことが関係に最も良い影響を与えます。',mChong:'結婚生活に変動が多く、より多くの対話と寛容が必要です。',
+ mRole:['配偶者は重要な支えとなります。','','配偶者との関係には多くのエネルギーと責任が必要です。'],
+ kStrongBad:'子どもは能力と個性が強く、子育てでは責任を重く感じやすい構造です。',kStrong:'子どもは能力と主体性があります。',kHour:'時干が喜用のため、子どもは将来、精神的な支えや慰めになる可能性があります。',kNone:'子どもの縁は運勢による引き出しを待つ必要があり、時期が遅めになる可能性があります。',
+ hCare:['感情の整理と体のストレッチ','睡眠の質と心の安定','規則正しい食事と消化','呼吸器と皮膚のケア','規則正しい生活リズムと体力の回復'],hNeed:'最も気をつけたいのは{care}です。',hHot:'燥熱の構造は睡眠や感情が張り詰めやすいことを示しており、規則正しい生活が最も直接的に効果的です。',hCold:'寒の構造は活力の立ち上がりが遅いことを示しており、適度な運動と保温が有益です。',
+ dimM:[['状態が外部環境に左右されやすく、安定した支えが必要','おおむね安定しているが、大きな衝撃には緩衝が必要','基盤が堅固で、変化の中でも状態を保てる'],
+  ['エネルギーの流れが滞りやすく、特定の事柄で行き詰まりやすい','エネルギーの流れはおおむね順調だが、部分的に引っ張り合いがある','エネルギーがよく流れ、各面が互いに高め合う'],
+  ['構造的な矛盾が多く、運勢の助けがあって力を発揮できる','格局は成立し、長所と短所が混在','格局の構造が良く、重圧の中で物事を成す枠組みがある'],
+  ['最も必要な資源が不安定で、自ら維持する必要がある','必要な資源に一定の基盤がある','必要な資源が堅実で、動かしやすい'],
+  ['生涯の運勢はやや厳しく、長期的に堅実な運営が必要','生涯の起伏は均衡し、長期的な順境や逆境は目立たない','生涯の運勢は全体に順調'],
+  ['中年以降は守りを固め、早めに備えるのが良い','中年以降に起伏があり、その中の高峰をつかめる','後になるほど良くなる、伸びのある型'],
+  ['事業は基盤や他者の力を借りるのが良く、単独の冒険は避けたい','事業には一定の基盤があり、着実に発展できる','事業は本命で最も強みのある分野の一つ'],
+  ['財は堅実に積み上げるのが良く、急進は避けたい','財は期待できるが、身の丈に合わせて','財運は良く、適度に攻めてよい'],
+  ['学びの条件は自分でつくる必要がある','学びと貴人の支えに一定の基盤がある','学ぶ力と貴人の支えがともに良い'],
+  ['結婚にはより多くの対話と努力が必要','結婚は安定しているが、外部要因の影響に注意','結婚の基盤は堅固'],
+  ['回復力が弱点で、生活リズムとペースを重視したい','体質は安定しており、仕事と休息のバランスに注意','体質の基盤は良好'],
+  ['重圧に受け身になりやすく、背負いすぎは避けたい','重圧への耐性は中程度で、支えによる分担が必要','重圧への耐性が際立った強みで、高い負荷の中でも成果を出せる'],
+  ['子どもの縁は遅めか、より多くの投資が必要','子どもの縁は穏やか','子どもの縁は良く、将来の支えとなる']],
+ typeM:['格局と用神はしっかりしているが、運勢は平凡です。命局そのものの質が主な拠り所で、基盤を固めて長く運営するのが向いています。','長所と短所の差が明確です。長所を発揮しつつ、意識的に短所を補うのが良く、均等に力を注ぐ必要はありません。','日主の基盤は強いがエネルギーの流れが不足し、活力はあるのに滞りやすい型です。適切なアウトプットと活躍の場を見つけることが鍵です。','各面が比較的均衡し、目立った短所はありません。着実に発展すれば十分です。'],
+ meanL:'解説'},
+en:{realL:'In practice',repL:'Meaning in this chart',howL:'How to use it',self:'the self',stemOf:'{tg} ({m})',
+ posS:['outside world and early life','work environment','the self','results, children and later life'],posB:['outside world and family','work environment','self and partner','results, children and later life'],
+ catS:['peers and team','expression and output','income and business','responsibility and pressure','learning and support'],
+ cls:['A weak self does not mean low ability; it means your energy reserve is smaller than what the outside world demands. In practice you can get things done, but at a higher cost than others, and recovery takes longer. You shine with support and struggle when isolated, so choosing the right platform, team and partners often matters more than effort alone.',
+  'The self is slightly weak: your energy is a little below outside demands. Most of the time you cope, but intense periods drain you; leaning on a team and a support system makes your performance much steadier.',
+  'The self is balanced: your energy roughly matches outside demands. You adapt well and stay steady in good times and bad; luck mostly changes how many opportunities appear, not whether you can bear them.',
+  'The self is slightly strong: you have ample energy, a clear point of view and drive. Without enough challenge or outlets you may come across as stubborn.',
+  'The self is strong: abundant energy, strong opinions and dislike of constraint. You need real responsibility, challenge or outlets for that energy, or you may become obstinate or clash with others; weighty roles suit you.'],
+ elMain:'The biggest share of your life goes to {a}, followed by {b}; the scarcest is {z}. {need}',
+ need:['What to add: support from peers and a team, and more self-confidence.','What to add: expression and output, so your abilities are visible.','What to add: practical management and steady accumulation of resources.','What to add: reasonable goals, rules and responsibility to give your energy direction.','What to add: learning, mentors and rest, the things most easily sacrificed.'],
+ miss:'The chart lacks {els}, so {mean} must come from luck cycles or your environment.',
+ tgTop:'{a} and {b} are the most numerous, so {am} and {bm} form the backbone of your life; {z} is the least, so {zm} comes through few channels.',tgMissH:'Missing from the chart: {gods}. ',
+ tgMiss:['few peers who stand shoulder to shoulder with you','few rivals taking your resources, but also few partners to share burdens','few calm, steady ways to produce output','little sharp self-expression; a steady style','few windfalls or investment opportunities','no steady, step-by-step income source','little outside pressure pushing you, and few strong opponents','no clear formal status or title','few unconventional ideas or cross-disciplinary channels','no formal, stable source of support, such as an institutional backer or long-term mentor'],
+ sHe:'{x} and {y} are bound together: closely linked, able to cooperate but also to hold each other back.',sCh:'There is tension and conflict between {x} and {y}{adj}.',adjA:'; the effect is direct and noticeable',adjD:'; being apart, the impact is cushioned',
+ bHe:'{d} are closely linked and move each other.',bHeEl:' The combination produces {el}, which is {cat}, so matters of {cm} become more prominent.',b_chong:'Changes and conflicts arise easily between {d}.',b_xing:'Friction and internal strain arise easily between {d}.',b_zixing:'{d} tends toward repetition and self-inflicted strain.',
+ b_hai:'Hidden losses or misunderstandings arise easily between {d}.',b_po:'Plans between {d} are easily disrupted.',bGong:'{d} quietly hold {mid} ({el}, {cat}); it stays hidden until a {mid} year or decade activates it.',and:' and ',
+ rootDm:['your own foundation is solid and resilient','your own foundation is shallow; build credentials and resources to reinforce it','you have almost no roots and rely heavily on outside support'],
+ root:['a solid, lasting base in {c}','some base in {c}, but shallow; it needs reinforcing','{c} is unstable, present at times and absent at others; build it deliberately'],rootGuan:'pressure comes from a stable, lasting source, so you need long-term coping systems',
+ cliT:['A slower, reserved and cautious pace; outside stimulus helps you get moving.','A slower, reserved and cautious pace; outside stimulus helps you get moving.','A moderate pace.','A fast pace of life; you tense up easily and act quickly but find it hard to relax.','A fast pace of life; you tense up easily and act quickly but find it hard to relax.'],
+ cliD:[' You may hesitate and bottle up feelings.',' You may hesitate and bottle up feelings.','',' You tend to overthink and get restless.',' You tend to overthink and get restless.'],
+ need4:'“Moisture” in practice means enough sleep, a slower pace, quiet surroundings and time with no output goal.',need1:'“Warmth” in practice means exercise, social contact, sunlight and clear goals that motivate you.',needN:'Temperature and moisture are roughly balanced; no special adjustment is needed.',
+ pat:['Your life’s theme is independence and striving: you value peers, do not shy from competition, stand on your own feet first and then expand through cooperation.','Your life’s theme is independence and striving: you value peers, do not shy from competition, stand on your own feet first and then expand through cooperation.',
+  'Your life’s theme is building a name through expertise and work products: calm, steady output and a strong sense of quality of life. The key is finding a field where you can contribute for the long haul.','Your life’s theme is talent and breakthrough: innovative and willing to challenge existing rules. Fields that need change and creativity suit you, but take care in dealing with authority.',
+  'Your life’s theme is seizing opportunities and fluid resources: flexible and sociable. Fields that need pioneering and integration suit you, but manage risk.','Your life’s theme is practicality and accumulation: you value stable income and order, and suit a steady, long-term path.',
+  'Your life’s theme is growing under high demands and pressure. You are often pushed into roles that carry responsibility and hard problems; pressure is both the challenge and the source of recognition. The key is not avoiding pressure but turning it into results and status.',
+  'Your life’s theme is rising steadily within rules and systems, valuing reputation and credibility. Organizations with clear promotion paths suit you; integrity serves better than risk-taking.',
+  'Your life’s theme is original thinking and cross-disciplinary knowledge, with unconventional insights. Research, strategy and other fields that need deep thinking suit you.','Your life’s theme is growing through knowledge, credentials and a support system, with help from seniors and platforms. Paths that value expertise and accumulation suit you.'],
+ yong:'{agree} For this chart, the most effective resupply comes from {el}, meaning “{cm}”. Concretely: {act}. The return on this usually beats spending the same effort elsewhere.',
+ agreeN:['All three methods point to the same answer, so the conclusion is fairly reliable.','Two methods agree, so the judgment is reasonably reliable.','The methods disagree; check against your actual experience.'],
+ howUse:['Invest first and keep at it','Use actively as a support','Let it be; no special effort','Invest selectively and avoid overextending','No need to avoid it, but limit the total and handle it with the useful element'],
+ qLi:['Your supporting resources are solid and reliable, ','Your supporting resources have some base, ','Your supporting resources are unstable, '],qQing:['and close at hand, easy to draw on.','but a little distant; you need to go after them.','and hidden, waiting for luck cycles to bring them out.'],
+ qTip:[' You can treat this as a long-term pillar.',' Turn occasional help into stable relationships, such as regular advice and long-term collaboration, instead of asking only when you need it.'],
+ flag:{f_mix:'Pressure comes from several directions and title and real power intertwine, which can leave you torn; set clear priorities.',f_shg:'Sharp expression can collide with authority and rules; mind the tone.',f_xiaoA:'Thinking and doing get in each other’s way: lots of ideas, less action.',f_xiaoD:'Learning and reflection sometimes clash with output, showing up as overthinking and slow progress, or as being too busy to think deeply; there is room to reconcile them by planning your pace.',f_cai:'Chasing income tends to sacrifice learning, reputation or rest.',f_bj:'Partnerships easily turn into disputes over money; keep finances clear.',f_clean:'The pattern is clean with no clear internal conflict, so your strengths flow freely.'},
+ ratePh:['support and opportunity converge; a time to expand and leap','things go smoothly; a time to advance steadily','gains and losses mix; a time to build and adjust','high input, slow returns; pace yourself','heavy pressure or drain; consolidate and look after yourself'],
+ theme1:'{a} is the theme of this decade: {r}.',theme2:'{a} and {b} are the themes of this decade: {r}.',themeY1:'{a} is the focus this year: {r}.',themeY2:'{a} and {b} are the focus this year: {r}.',themeM1:'Focus on {a}: {r}.',themeM2:'Focus on {a} and {b}: {r}.',
+ curLuck:'Current decade {gz} ({yr})',
+ iHe:'new links or cooperation in {d}',iChong:'change in {d}',iXing:'friction and strain in {d}',iHai:'hidden losses or misunderstandings in {d}',iPo:'plans in {d} easily disrupted',iBan:'{d} set in motion',iJu:'{el} forms a combination; matters of “{cm}” concentrate',iSHe:'ties or cooperation around “{cm}”',iSCh:'tension around “{cm}”',
+ wRole:['Wealth is favorable: income and resources genuinely help you, so manage them actively.','Wealth is neutral: how much you build depends mainly on how you manage it.','Each unit of income comes with matching responsibility and drain, so income and pressure tend to rise together. Earning steady returns through expertise and reputation suits you better than chasing high-risk bets.'],
+ pRole:['Responsibility and position help you; taking on more makes you grow.','Position and responsibility are neutral; status depends mostly on your choices.','Position and responsibility bring pressure, and status tends to rise once support is in place; status comes from solving hard problems rather than seniority or connections.'],
+ kRole:['For you, learning is not a hobby but your most important way to recharge.','Learning and support are neutral; invest as needed.','Too much study or reliance on others can slow you down; apply what you learn.'],kNoRoot:'Outside conditions for learning are unstable, so knowledge comes mostly from self-study and actively seeking resources.',
+ cWay:'If you work in industries such as {bad}, take part {way}, turning the pressure of the industry into professional value.',
+ way:['by working with a team','through expert output and work products','through management and resource integration','through management and accountability','as an adviser, researcher or supporter'],
+ mPal:'A deep bond with your partner; you are closely connected.',mStable:'The marriage structure is stable.',mMonth:'Work and family are tightly bound: work pressure spills into family life, and your partner may be closely involved in your career. Consciously separating work and home helps the relationship most.',mChong:'Married life sees more change and needs more communication and patience.',
+ mRole:['Your partner is an important source of support.','','The relationship asks for considerable energy and responsibility.'],
+ kStrongBad:'Children are capable and strong-willed; raising them carries a heavy sense of responsibility.',kStrong:'Children are capable and independent-minded.',kHour:'With a favorable hour stem, children may later become a source of emotional support and comfort.',kNone:'Children may come later, waiting for luck cycles to activate this area.',
+ hCare:['emotional release and physical stretching','sleep quality and a calm mind','regular meals and digestion','the respiratory system and skin care','a regular routine and energy recovery'],hNeed:'What needs most care: {care}.',hHot:' The hot, dry structure suggests tension in sleep and mood; a regular routine is the most direct remedy.',hCold:' The cold structure suggests slow-starting vitality; moderate exercise and keeping warm help.',
+ dimM:[['easily swayed by the environment; needs steady support','fairly stable, though big shocks need cushioning','solid foundation that holds steady through change'],
+  ['energy gets stuck easily in one type of matter','energy flows reasonably well with some local tension','energy flows freely and areas reinforce each other'],
+  ['many structural tensions; needs good luck to perform','the pattern holds, with strengths and flaws','strong structure for getting things done under pressure'],
+  ['the most needed resource is unstable; maintain it actively','needed resources have some base','needed resources are solid and easy to draw on'],
+  ['luck is tight overall; steady long-term management needed','balanced ups and downs, no long good or bad stretch','luck is smooth overall'],
+  ['consolidate after midlife and prepare early','ups and downs after midlife, with peaks to seize','improves with age; a late bloomer'],
+  ['lean on platforms and others; avoid going it alone','a reasonable base for steady career growth','career is one of this chart’s strongest areas'],
+  ['build wealth steadily; avoid rash moves','wealth is attainable; act within your means','good wealth luck; moderate ambition pays'],
+  ['you must create your own learning conditions','some base in learning and mentors','strong learning ability and mentor support'],
+  ['marriage needs more communication and effort','marriage is steady; watch outside pressures','solid foundation for marriage'],
+  ['recovery is a weak point; protect routine and pace','steady constitution; balance work and rest','a sound physical foundation'],
+  ['tends to react passively to pressure; avoid overcommitting','moderate resilience; share the load','resilience is a standout strength'],
+  ['children may come later or need more investment','a steady bond with children','a good bond; children may become a support']],
+ typeM:['Strong pattern and useful element but average luck: the chart’s quality is the main asset, so build foundations and play the long game.','A clear gap between strengths and weaknesses: use the strengths while deliberately shoring up the weak spots, rather than spreading effort evenly.','A strong self with poor flow: lots of energy that easily stagnates; the key is finding the right outlets.','Balanced across the board with no clear weak spot; steady progress is enough.'],
+ meanL:'Reading'}};
+const IPf=(k,v)=>{let s=IP[lang][k];if(s===undefined)s=IP.zh[k];if(typeof s!=='string')return s;if(v)s=s.replace(/\{(\w+)\}/g,(m,p)=>v[p]!==undefined?v[p]:'');return s;};
+const real=t=>t?`<p class="real"><strong>${IPf('realL')}${lang==='en'?': ':'：'}</strong>${t}</p>`:'';
+const qt=x=>lang==='ja'?`「${x}」`:`“${x}”`;
+const stemLab=(c,i)=>i===2?IPf('self'):IPf('stemOf',{tg:L().ten[tg(c.dm,c.P[i].s)],m:IP[lang].catS[Math.floor(tg(c.dm,c.P[i].s)/2)]});
+const joinD=a=>a.length===2?a.join(IPf('and')):joinL(a);
+function bRelMean(r,c){const I=IP[lang],ds=joinD(r.m.map(i=>qt(I.posB[i])));
+  if(['liuhe','banhe','sanhe','sanhui'].includes(r.t)){let s=IPf('bHe',{d:ds});if(r.el!==undefined){const k=catOf(c,r.el);s+=IPf('bHeEl',{el:L().el[r.el],cat:L().cat[k],cm:I.catS[k]});}return s;}
+  if(r.t==='gong'){const e=BE[r.mid],k=catOf(c,e);return IPf('bGong',{d:ds,mid:B[r.mid],el:L().el[e],cat:L().cat[k]});}
+  return IPf('b_'+r.t,{d:ds});}
+function interactInfo(x,c){const P=c.P,bs=P.map(p=>p.b),R=L().rel,I=IP[lang],out=[];
+  P.forEach((p,i)=>{const a=x.b,b=p.b,k=pk(a,b),d=qt(I.posB[i]),add=(rk,mk,w)=>out.push({t:T('inter',{x:B[a],pos:L().pos[i],b:B[b],rel:R[rk]}),m:IPf(mk,{d}),w:w+(i===1||i===2?1:0)});
+    if(a!==b&&(a+b)%12===1)add('liuhe','iHe',2);if(Math.abs(a-b)===6)add('chong','iChong',3);
+    if(XING.includes(k)||(a===b&&[4,6,9,11].includes(a)))add('xing','iXing',2);if(a!==b&&(a+b)%12===7)add('hai','iHai',1);if(PO.includes(k))add('po','iPo',1);
+    SANHE.forEach(g=>{const [sh,w,mu]=g;if(a!==b&&(pk(sh,w)===k||pk(w,mu)===k))add('banhe','iBan',1);});});
+  [[SANHE,'sanhe'],[SANHUI,'sanhui']].forEach(([G,rk])=>G.forEach(g=>{const tri=g.slice(0,3);if(tri.includes(x.b)&&tri.filter(t=>t!==x.b).every(o=>bs.includes(o))){const k=catOf(c,g[3]);out.push({t:tri.map(t=>B[t]).join('')+R[rk]+L().el[g[3]],m:IPf('iJu',{el:L().el[g[3]],cm:I.catS[k]}),w:5});}}));
+  P.forEach((p,i)=>{const a=x.s,b=p.s,cm=i===2?IPf('self'):I.catS[Math.floor(tg(c.dm,b)/2)];
+    if(Math.abs(a-b)===5)out.push({t:T('interS',{x:S[a],pos:L().pos[i],s:S[b],rel:R.he}),m:IPf('iSHe',{cm}),w:1});
+    if(Math.abs(a-b)===6&&Math.min(a,b)<4)out.push({t:T('interS',{x:S[a],pos:L().pos[i],s:S[b],rel:R.chong}),m:IPf('iSCh',{cm}),w:2});});
+  return out.sort((a,b)=>b.w-a.w);}
+function themeOf(p,c,kind){const I=IP[lang],sc=catOf(c,SE(p.s)),bc=catOf(c,BE[p.b]),r=I.ratePh[rateP(p,c).i];
+  return sc===bc?IPf(kind+'1',{a:qt(I.catS[sc]),r}):IPf(kind+'2',{a:qt(I.catS[sc]),b:qt(I.catS[bc]),r});}
+const infoCell=(th,inf)=>`${th}${inf.length?`<div class="hint">${inf.slice(0,2).map(x=>`${x.t}${lang==='en'?': ':'，'}${x.m}`).join('<br>')}</div>`:''}`;
+
+Object.assign(IP.zh,{capW:'日主偏弱，尤其要慎用杠杆与担保。',capS:'日主有力，能够担财，可以适度进取。'});
+Object.assign(IP.ja,{capW:'日主がやや弱いため、特にレバレッジや保証には慎重に。',capS:'日主に力があり財を担えるため、適度に攻めてもよいでしょう。'});
+Object.assign(IP.en,{capW:' With a weaker self, be especially careful with leverage and guarantees.',capS:' With a strong self you can carry wealth, so moderate ambition works.'});
+const band3=r=>r<=1?0:r===2?1:2;
+
+Object.assign(IP.zh,{"rgTitle": "术语说明：用神、喜神、闲神、仇神、忌神", "rgIntro": "这五个角色描述的是每种五行对本命局的作用。可以用看病来比喻：命局的失衡是“病”，用神是“药”，喜神是帮助药发挥作用的“助手”，忌神是“病源”，仇神是“帮凶”，闲神则是“旁观者”。", "cols": ["角色", "含义", "本工具的判定方法", "有什么意义"], "rows": [["对命局最有帮助、最能平衡命局的五行。", "综合扶抑（日主强弱）、格局（格局成败所需）、调候（寒暖燥湿）三法，取多数一致者。", "最值得投入的方向。大运流年遇到用神五行，通常较为顺利。"], ["辅助用神的五行，能生扶用神，或与用神同向帮助日主。", "日主偏弱时，取印星与比劫中未被选为用神的一方；其他情况取生助用神的五行。", "次要的有利方向，可以积极利用。"], ["对命局影响不大的五行，不帮也不害。", "未被归入其他四类的五行。", "顺其自然，不必刻意追求或回避。"], ["间接不利的五行，会生助忌神，或克制喜神。", "日主偏弱时，取忌神之外其他消耗日主的五行；其他情况取生助忌神的五行。", "宜有选择地投入，避免过度。"], ["对命局最不利的五行，会克制用神，或加重命局最大的失衡。", "日主偏弱时，取克、泄、耗日主力量最重的一类；其他情况取克制用神的五行。", "不必刻意回避，但要控制总量，并借助用神来承接。大运流年遇到忌神五行，压力通常较大。"]], "rgNote": "这五个角色只针对本命局成立：同一个五行，在不同的命局中角色可能完全相反。运势评价也由此而来：大运流年的天干地支属于用神、喜神则加分，属于仇神、忌神则减分。", "tips": ["用神：对命局最有帮助的五行", "喜神：辅助用神的五行", "闲神：影响不大的五行", "仇神：生助忌神的间接不利五行", "忌神：对命局最不利的五行"], "rgRef": "文中的用神、喜神、闲神、仇神、忌神，含义说明见「格局与用神」标签页。"});Object.assign(IP.ja,{"rgTitle": "用語の説明：用神・喜神・閑神・仇神・忌神", "rgIntro": "この五つの役割は、各五行が本命局に与える作用を表します。病気の治療にたとえると、命局の偏りが「病」、用神が「薬」、喜神が薬の効き目を助ける「助手」、忌神が「病の原因」、仇神が「その加担者」、閑神は「傍観者」にあたります。", "cols": ["役割", "意味", "本ツールの判定方法", "意義"], "rows": [["命局に最も役立ち、命局の偏りを最もよく整える五行。", "扶抑（日主の強弱）・格局（格局の成否に必要なもの）・調候（寒暖燥湿）の三法を総合し、多数が一致するものを取ります。", "最も投資する価値のある方向です。大運や流年で用神の五行が巡ると、おおむね順調です。"], ["用神を補助する五行。用神を生じたり、用神と同じ方向で日主を助けたりします。", "日主が弱い場合は、印星と比劫のうち用神に選ばれなかった方を取ります。それ以外は用神を生じる五行を取ります。", "二番目に有利な方向で、積極的に活用できます。"], ["命局への影響が小さく、助けも害もしない五行。", "他の四つに分類されなかった五行です。", "自然に任せ、無理に求めたり避けたりする必要はありません。"], ["間接的に不利な五行。忌神を生じたり、喜神を剋したりします。", "日主が弱い場合は、忌神以外で日主を消耗させる五行を取ります。それ以外は忌神を生じる五行を取ります。", "選んで投資し、やりすぎを避けましょう。"], ["命局に最も不利な五行。用神を剋したり、命局の最大の偏りを強めたりします。", "日主が弱い場合は、日主を剋・洩・耗する力が最も重い類を取ります。それ以外は用神を剋す五行を取ります。", "無理に避ける必要はありませんが、総量を抑え、用神で受け止めましょう。大運や流年で忌神の五行が巡ると、重圧が大きくなりがちです。"]], "rgNote": "この五つの役割は本命局に限って成り立ちます。同じ五行でも、命局が違えば役割が正反対になることがあります。運勢の評価もここから導かれ、大運・流年の干支が用神・喜神なら加点、仇神・忌神なら減点されます。", "tips": ["用神：命局に最も役立つ五行", "喜神：用神を補助する五行", "閑神：影響の小さい五行", "仇神：忌神を生じる間接的に不利な五行", "忌神：命局に最も不利な五行"], "rgRef": "文中の用神・喜神・閑神・仇神・忌神の意味は「格局と用神」タブで説明しています。"});Object.assign(IP.en,{"rgTitle": "Glossary: Useful, Favorable, Neutral, Adverse and Harmful elements", "rgIntro": "These five roles describe what each element does for this particular chart. Think of medicine: the chart’s imbalance is the illness, the Useful element is the medicine, the Favorable element is the helper that makes the medicine work, the Harmful element is the cause of the illness, the Adverse element is its accomplice, and the Neutral element is a bystander.", "cols": ["Role", "Meaning", "How this tool decides", "Why it matters"], "rows": [["The element that helps the chart most and best restores its balance.", "Combines three methods, strength balance, pattern and climate, and takes the element most of them agree on.", "The direction most worth investing in. Luck pillars carrying this element usually go smoothly."], ["The element that supports the Useful element, either by producing it or by helping the self in the same direction.", "With a weak self, it is whichever of Resource or Companions was not chosen as Useful; otherwise it is the element that produces the Useful element.", "A secondary favorable direction you can use actively."], ["An element with little effect, neither helping nor harming.", "Any element not placed in the other four roles.", "Let it be; no need to pursue or avoid it."], ["An indirectly unfavorable element that feeds the Harmful element or attacks the Favorable one.", "With a weak self, the other elements that drain the self besides the Harmful one; otherwise the element that produces the Harmful element.", "Invest selectively and avoid overdoing it."], ["The most unfavorable element, which attacks the Useful element or deepens the chart’s main imbalance.", "With a weak self, the group that controls, drains or exhausts the self most; otherwise the element that controls the Useful element.", "No need to avoid it, but limit the total and handle it with the Useful element. Luck pillars carrying it usually bring more pressure."]], "rgNote": "These roles hold only for this chart: the same element can play the opposite role in another chart. They also drive the fortune ratings: luck pillars whose stems and branches are Useful or Favorable score higher, and Adverse or Harmful ones score lower.", "tips": ["Useful: the element that helps the chart most", "Favorable: supports the Useful element", "Neutral: little effect either way", "Adverse: feeds the Harmful element", "Harmful: the most unfavorable element"], "rgRef": "For the meaning of Useful, Favorable, Neutral, Adverse and Harmful, see the Pattern and useful god tab."});
+function glossHTML(c){const I=IP[lang];return `<details class="gloss" open><summary>${I.rgTitle}</summary><p>${I.rgIntro}</p>`+tbl(I.cols,[0,1,2,3,4].map(k=>[`<span class="rate" style="color:${RC[k]}">${L().role[k]}</span>`,I.rows[k][0],I.rows[k][1],I.rows[k][2]]))+`<p class="hint">${I.rgNote}</p></details>`;}
 function tabStructure(c){
-  const p=pal(),R=L().rel;
+  const p=pal(),R=L().rel,I=IP[lang];
   let h=`<h3>${T('s_str')}</h3>`+kv([
    [T('s_ling'),L().ling[c.lingI]+par(B[c.P[1].b])],
    [T('s_di'),T('diV',{a:c.dmRoots.filter(r=>r.strong).length,b:c.dmRoots.filter(r=>!r.strong).length})],
    [T('s_zhu'),T('zhuV',{n:c.helpers})],
    [T('s_score'),`<div style="display:flex;align-items:center;gap:10px">${bar(c.ratio,p.el[c.dmE])}<span>${Math.round(c.ratio*100)}%</span></div>`],
    [T('s_concl'),`<strong>${L().cls[c.cls]}</strong>`+(c.cong?`<div class="hint">${T('s_cong')}</div>`:'')]]);
+  h+=real(I.cls[c.cls]);
   const ew=c.elW.reduce((a,b)=>a+b,0);
-  h+=`<h3>${T('s_el')}</h3>`+tbl([T('c_el'),T('c_vis'),T('c_hid'),T('c_w')],[0,1,2,3,4].map(e=>[`<span style="display:inline-flex;align-items:center;gap:6px"><svg width="16" height="16" viewBox="0 0 24 24">${ELI[e](p.el[e],p.dark?'#1D1E22':'#FFFDF8')}</svg>${elc(e)}</span>`,c.visCnt[e],c.hidCnt[e],`<div style="display:flex;align-items:center;gap:8px">${bar(c.elW[e]/ew,p.el[e])}<span>${Math.round(c.elW[e]/ew*100)}%</span></div>`]));
+  h+=`<h3>${T('s_el')}</h3>`+tbl([T('c_el'),T('c_vis'),T('c_hid'),T('c_w'),IPf('repL')],[0,1,2,3,4].map(e=>[`<span style="display:inline-flex;align-items:center;gap:6px"><svg width="16" height="16" viewBox="0 0 24 24">${ELI[e](p.el[e],p.dark?'#1D1E22':'#FFFDF8')}</svg>${elc(e)}</span>`,c.visCnt[e],c.hidCnt[e],`<div style="display:flex;align-items:center;gap:8px">${bar(c.elW[e]/ew,p.el[e])}<span>${Math.round(c.elW[e]/ew*100)}%</span></div>`,`${L().cat[catOf(c,e)]}${lang==='en'?': ':'：'}${I.catS[catOf(c,e)]}`]));
+  const ord=[0,1,2,3,4].sort((a,b)=>c.elW[b]-c.elW[a]),cs=e=>qt(I.catS[catOf(c,e)]);
+  let t=IPf('elMain',{a:cs(ord[0]),b:cs(ord[1]),z:cs(ord[4]),need:I.need[catOf(c,ord[4])]});
+  const miss=[0,1,2,3,4].filter(e=>c.hidCnt[e]===0);
+  if(miss.length)t+=(lang==='en'?' ':'')+IPf('miss',{els:joinL(miss.map(e=>L().el[e])),mean:joinL(miss.map(e=>qt(I.catS[catOf(c,e)])))});
+  h+=real(t);
   h+=`<h3>${T('s_tg')}</h3><div class="cols2">`+[0,5].map(st=>tbl([T('c_tg'),T('c_stem'),T('c_hid')],[0,1,2,3,4].map(k=>{const g=st+k;return [`<span style="display:inline-flex;align-items:center;gap:6px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">${TGI[g]}</svg>${L().ten[g]}</span>`,c.tgVis[g],c.tgAll[g]];}))).join('')+`</div>`;
-  const sr=c.stemRel.map(r=>`${L().pos[r.i]}${S[c.P[r.i].s]}　${L().pos[r.j]}${S[c.P[r.j].s]}：${R[r.t]}${r.t==='he'?L().el[r.el]:''}${r.j-r.i===1?T('adjA'):T('adjD')}`);
-  const brl=c.brRel.map(r=>`${relLabel(r)}　${r.m.map(k=>L().pos[k]).join(lang==='en'?'/':'')}${r.m.length===2?(r.m[1]-r.m[0]===1?T('adjA'):T('adjD')):''}`);
-  h+=`<div class="cols2"><div><h3>${T('s_sr')}</h3>${sr.length?sr.map(x=>`<p>${x}</p>`).join(''):`<p>${T('none')}</p>`}</div><div><h3>${T('s_br')}</h3>${brl.length?brl.map(x=>`<p>${x}</p>`).join(''):`<p>${T('none')}</p>`}</div></div>`;
-  h+=`<h3>${T('s_roots')}</h3>`+tbl([T('c_stem'),T('c_strong'),T('c_weak')],c.P.map((pp,k)=>{const rs=c.roots[k],f=st=>rs.filter(r=>r.strong===st).map(r=>`${L().pos[r.j]}${B[c.P[r.j].b]}${par(L().stage[stage(pp.s,c.P[r.j].b)])}`).join(lang==='en'?', ':'、')||T('none');
-    return [`${L().pos[k]} <span class="gzc" style="color:${p.el[SE(pp.s)]}">${S[pp.s]}</span>`,f(true),f(false)];}));
+  const cc=[0,1,2,3,4].map(k=>c.tgAll[2*k]+c.tgAll[2*k+1]),co=[0,1,2,3,4].sort((a,b)=>cc[b]-cc[a]);
+  let t2=IPf('tgTop',{a:L().cat[co[0]],b:L().cat[co[1]],am:qt(I.catS[co[0]]),bm:qt(I.catS[co[1]]),z:L().cat[co[4]],zm:qt(I.catS[co[4]])});
+  const mg=[0,1,2,3,4,5,6,7,8,9].filter(g=>c.tgAll[g]===0);
+  if(mg.length)t2+=(lang==='en'?' ':'')+IPf('tgMissH',{gods:joinL(mg.map(g=>L().ten[g]))})+mg.map(g=>`${L().ten[g]}${lang==='en'?': ':'，'}${I.tgMiss[g]}`).join(SEMI())+(lang==='en'?'.':'。');
+  h+=real(t2);
+  const sr=c.stemRel.map(r=>`<p>${L().pos[r.i]}${S[c.P[r.i].s]}　${L().pos[r.j]}${S[c.P[r.j].s]}：${R[r.t]}${r.t==='he'?L().el[r.el]:''}${r.j-r.i===1?T('adjA'):T('adjD')}</p>`+real(IPf(r.t==='he'?'sHe':'sCh',{x:qt(stemLab(c,r.i)),y:qt(stemLab(c,r.j)),adj:r.j-r.i===1?IPf('adjA'):IPf('adjD')})));
+  const brl=c.brRel.map(r=>`<p>${relLabel(r)}　${r.m.map(k=>L().pos[k]).join(lang==='en'?'/':'')}${r.m.length===2?(r.m[1]-r.m[0]===1?T('adjA'):T('adjD')):''}</p>`+real(bRelMean(r,c)));
+  h+=`<h3>${T('s_sr')}</h3>${sr.length?sr.join(''):`<p>${T('none')}</p>`}<h3>${T('s_br')}</h3>${brl.length?brl.join(''):`<p>${T('none')}</p>`}`;
+  h+=`<h3>${T('s_roots')}</h3>`+tbl([T('c_stem'),T('c_strong'),T('c_weak'),IPf('realL')],c.P.map((pp,k)=>{const rs=c.roots[k],f=st=>rs.filter(r=>r.strong===st).map(r=>`${L().pos[r.j]}${B[c.P[r.j].b]}${par(L().stage[stage(pp.s,c.P[r.j].b)])}`).join(lang==='en'?', ':'、')||T('none');
+    const lvl=rs.some(r=>r.strong)?0:rs.length?1:2,cat=Math.floor(tg(c.dm,pp.s)/2);
+    const m=k===2?I.rootDm[lvl]:(cat===3&&lvl===0?IPf('rootGuan'):I.root[lvl].replace('{c}',qt(I.catS[cat])));
+    return [`${L().pos[k]} <span class="gzc" style="color:${p.el[SE(pp.s)]}">${S[pp.s]}</span>${k===2?'':`<div class="hint">${L().ten[tg(c.dm,pp.s)]}</div>`}`,f(true),f(false),`<span class="hint" style="color:var(--ink)">${m}</span>`];}));
   h+=`<h3>${T('s_cli')}</h3>`+kv([[T('c_temp'),L().temp[c.tI]],[T('c_dry'),L().dry[c.dI]],[T('c_need'),c.tiao===null?T('notUrgent'):elc(c.tiao)]]);
+  h+=real(I.cliT[c.tI]+I.cliD[c.dI]+(lang==='en'?' ':'')+(c.tiao===4?IPf('need4'):c.tiao===1?IPf('need1'):IPf('needN')));
   return h;
 }
 function tabPattern(c){
-  const p=pal(),dm=c.dm;
+  const p=pal(),I=IP[lang];
   let h=`<h3>${T('p_ss')}</h3>`+tbl([T('c_stem'),T('c_tg'),T('c_root'),T('c_season'),T('c_total')],c.ss.map(x=>[`${L().pos[x.i]} <span class="gzc" style="color:${p.el[SE(x.s)]}">${S[x.s]}</span>`,L().ten[x.g],x.rs,x.se,`<strong>${x.tot}</strong>`]));
   h+=`<h3>${T('p_geju')}</h3><p>`+(c.patFrom==='stem'?T('p_res',{s:S[c.best.s],tg:L().ten[c.best.g],name:c.patName}):T('p_fb',{s:S[c.mMainStem],tg:L().ten[c.mg],name:c.patName}))+`</p>`;
   h+=`<p class="hint">${T('p_yl',{s:S[c.mMainStem],tg:L().ten[c.mg],tou:c.mTou?T('tou'):T('notou')})}</p>`;
-  const clsN=L().cls[c.cls];
-  const fyBasis=c.fy?T('fyB',{cls:clsN,cat:L().cat[c.fy.top]}):T('fyN');
+  h+=real(I.pat[c.patG]);
+  const clsN=L().cls[c.cls],fyBasis=c.fy?T('fyB',{cls:clsN,cat:L().cat[c.fy.top]}):T('fyN');
   h+=`<h3>${T('p_m')}</h3>`+tbl([T('c_m'),T('c_read'),T('c_yong'),T('c_basis')],[
     [L().m[0],clsN,elc(c.fyE),fyBasis],[L().m[1],c.patName,elc(c.gjE),T('gjB',{name:c.patName,cls:clsN})],
     [L().m[2],L().temp[c.tI]+(lang==='en'?', ':'、')+L().dry[c.dI],c.tiao===null?T('notUrgent'):elc(c.tiao),T('thB',{t:L().temp[c.tI],d:L().dry[c.dI]})]]);
   h+=`<p><strong>${T('fin',{e:elc(c.fin),a:L().agree[c.agreeI]})}</strong></p>`;
+  const uc=catOf(c,c.fin);
+  h+=real(IPf('yong',{agree:I.agreeN[c.agreeI],el:L().el[c.fin],cm:L().catMean[uc],act:L().act[uc]}));
   const order=[0,1,2,3,4].sort((a,b)=>c.role[a]-c.role[b]);
-  h+=`<h3>${T('p_roles')}</h3>`+tbl([T('c_el'),T('c_tg'),T('c_role'),T('c_mean')],order.map(e=>[elc(e),L().cat[catOf(c,e)],`<span class="rate" style="color:${RC[[0,1,2,3,4][c.role[e]]]}">${L().role[c.role[e]]}</span>`,L().catMean[catOf(c,e)]]));
+  h+=`<h3>${T('p_roles')}</h3>`+tbl([T('c_el'),T('c_tg'),T('c_role'),T('c_mean'),IPf('howL')],order.map(e=>[elc(e),L().cat[catOf(c,e)],`<span class="rate" style="color:${RC[c.role[e]]}" title="${esc(I.tips[c.role[e]])}">${L().role[c.role[e]]}</span>`,L().catMean[catOf(c,e)],I.howUse[c.role[e]]]))+glossHTML(c);
   h+=`<h3>${T('p_q')}</h3>`+kv([[T('q_li'),`${L().liL[c.liI]}　<span class="hint">${T('liR',{a:c.sr,b:c.wr,ling:c.uLing?T('lingS'):''})}</span>`],[T('q_qing'),L().qingL[c.qingI]]]);
-  h+=`<h3>${T('p_flags')}</h3>`+(c.flags.length?c.flags.map(f=>`<p>${T(f)}</p>`).join(''):`<p>${T('f_clean')}</p>`);
+  h+=real(I.qLi[c.liI]+I.qQing[c.qingI]+I.qTip[c.liI===0?0:1]);
+  h+=`<h3>${T('p_flags')}</h3>`+(c.flags.length?c.flags.map(f=>`<p>${T(f)}</p>`+real(I.flag[f])).join(''):`<p>${T('f_clean')}</p>`+real(I.flag.f_clean));
   const cy=new Date().getFullYear(),ys=[];for(let y=cy-16;y<cy;y++)ys.push(y);
-  const ji=c.role.indexOf(4);
-  const a=ys.filter(y=>SE(mod(y-4,10))===c.fin),b=ys.filter(y=>SE(mod(y-4,10))===ji);
+  const ji=c.role.indexOf(4),a=ys.filter(y=>SE(mod(y-4,10))===c.fin),b=ys.filter(y=>SE(mod(y-4,10))===ji);
   h+=`<h3>${T('p_ver')}</h3><p>${T('verT',{u:L().el[c.fin],a:joinL(a.map(String)),j:L().el[ji],b:joinL(b.map(String))})}</p>`;
   return h;
 }
 function monthsOf(year){const lc=lichunJd(year),ys=mod(year-4,10),out=[];for(let k=0;k<12;k++){const jd=solveLon(mod(315+30*k,360),lc+k*30.44);out.push({s:mod((ys%5)*2+2+k,10),b:(k+2)%12,ms:jdToMs(jd)});}return out;}
 function tabFortune(c,sel){
-  const cy=new Date().getFullYear(),now=Date.now();
-  let h=`<h3>${T('f_luck')}</h3>`+tbl([T('c_p'),T('c_years'),T('c_age'),T('c_st'),T('c_bt'),T('c_rate'),T('c_note')],c.luck.map((l,k)=>{const r=rateP(l,c),it=interact(l,c);
-    return {cells:[gz(l),T('rng',{a:l.startY,b:l.startY+9}),T('rng',{a:l.age,b:l.age+9}),L().ten[tg(c.dm,l.s)],L().ten[tg(c.dm,HID[l.b][0])],chip(r.i),`<span class="hint">${it.slice(0,3).join(SEMI())||T('interNone')}</span>`],cur:cy>=l.startY&&cy<l.startY+10};}),r=>r.cur);
+  const cy=new Date().getFullYear(),now=Date.now(),I=IP[lang];
+  const li=c.luck.findIndex(l=>cy>=l.startY&&cy<l.startY+10);let h0='';
+  if(li>=0){const l=c.luck[li],inf=interactInfo(l,c);
+    h0=`<h3>${IPf('curLuck',{gz:S[l.s]+B[l.b],yr:T('rng',{a:l.startY,b:l.startY+9})})}　${chip(rateP(l,c).i)}</h3>`+real(themeOf(l,c,'theme')+(inf.length?(lang==='en'?' ':'')+inf.slice(0,3).map(x=>x.m).join(SEMI())+(lang==='en'?'.':'。'):''));}
+  let h=(li>=0?h0:'')+`<h3>${T('f_luck')}</h3>`+tbl([T('c_p'),T('c_years'),T('c_age'),T('c_st'),T('c_bt'),T('c_rate'),IPf('realL')],c.luck.map(l=>{const r=rateP(l,c);
+    return {cells:[gz(l),T('rng',{a:l.startY,b:l.startY+9}),T('rng',{a:l.age,b:l.age+9}),L().ten[tg(c.dm,l.s)],L().ten[tg(c.dm,HID[l.b][0])],chip(r.i),infoCell(themeOf(l,c,'theme'),interactInfo(l,c))],cur:cy>=l.startY&&cy<l.startY+10};}),r=>r.cur,true);
   const yrs=[];for(let y=cy;y<cy+12;y++)yrs.push(y);
-  h+=`<h3>${T('f_years')}</h3>`+tbl([T('c_years'),T('c_p'),T('c_rate'),T('c_note')],yrs.map(y=>{const pp={s:mod(y-4,10),b:mod(y-4,12)},r=rateP(pp,c),it=interact(pp,c);return {cells:[y,gz(pp),chip(r.i),`<span class="hint">${it.slice(0,3).join(SEMI())||T('interNone')}</span>`],cur:y===cy};}),r=>r.cur);
+  h+=`<h3>${T('f_years')}</h3>`+tbl([T('c_years'),T('c_p'),T('c_rate'),IPf('realL')],yrs.map(y=>{const pp={s:mod(y-4,10),b:mod(y-4,12)},r=rateP(pp,c);return {cells:[y,gz(pp),chip(r.i),infoCell(themeOf(pp,c,'themeY'),interactInfo(pp,c))],cur:y===cy};}),r=>r.cur,true);
   const fl=flowNow(),ms=monthsOf(fl.year);
-  h+=`<h3>${T('f_months')}</h3>`+tbl([T('c_month'),T('c_p'),T('c_start'),T('c_rate')],ms.map((m,k)=>{const d=new Date(m.ms+c.inp.tz*3600000),r=rateP(m,c);const next=k<11?ms[k+1].ms:Infinity;
-    return {cells:[k+1,gz(m),L().dateFmt(d.getUTCFullYear(),d.getUTCMonth()+1,d.getUTCDate()),chip(r.i)],cur:now>=m.ms&&now<next};}),r=>r.cur);
+  h+=`<h3>${T('f_months')}</h3>`+tbl([T('c_month'),T('c_p'),T('c_start'),T('c_rate'),IPf('realL')],ms.map((m,k)=>{const d=new Date(m.ms+c.inp.tz*3600000),r=rateP(m,c),next=k<11?ms[k+1].ms:Infinity;
+    return {cells:[k+1,gz(m),L().dateFmt(d.getUTCFullYear(),d.getUTCMonth()+1,d.getUTCDate()),chip(r.i),`<span class="hint" style="color:var(--ink)">${themeOf(m,c,'themeM')}</span>`],cur:now>=m.ms&&now<next};}),r=>r.cur,true);
   const lp=c.luck[sel.luck],yp={s:mod(sel.year-4,10),b:mod(sel.year-4,12)};
-  h+=`<h3>${T('f_inter')}</h3>`+kv([[`${T('selLuck')} ${gz(lp)}`,interact(lp,c).join('<br>')||T('interNone')],[`${T('selYear')} ${sel.year} ${gz(yp)}`,interact(yp,c).join('<br>')||T('interNone')]]);
+  const fmt=inf=>inf.length?inf.map(x=>`${x.t}<div class="hint">${x.m}</div>`).join(''):T('interNone');
+  h+=`<h3>${T('f_inter')}</h3>`+kv([[`${T('selLuck')} ${gz(lp)}`,`<p style="margin:0 0 6px">${themeOf(lp,c,'theme')}</p>`+fmt(interactInfo(lp,c))],[`${T('selYear')} ${sel.year} ${gz(yp)}`,`<p style="margin:0 0 6px">${themeOf(yp,c,'themeY')}</p>`+fmt(interactInfo(yp,c))]]);
   return h;
 }
 function tabDomains(c){
-  const dm=c.dm,P=c.P,cnt=k=>c.tgAll[2*k]+c.tgAll[2*k+1],vis=k=>c.tgVis[2*k]+c.tgVis[2*k+1],ce=k=>(c.dmE+k)%5;
+  const dm=c.dm,P=c.P,I=IP[lang],cnt=k=>c.tgAll[2*k]+c.tgAll[2*k+1],vis=k=>c.tgVis[2*k]+c.tgVis[2*k+1],ce=k=>(c.dmE+k)%5;
   const star=k=>T('star',{cat:L().cat[k],n:cnt(k),t:vis(k),role:L().role[c.role[ce(k)]]});
-  const ss=key=>c.ssr.find(x=>x.k===key);
-  let h=`<h3>${T('d_w')}</h3><p>${star(2)}</p><p>${c.cls<=1?T('wW'):c.cls>=3?T('wS'):T('wN')}</p>`;
+  const ss=key=>c.ssr.find(x=>x.k===key),rb=k=>band3(c.role[ce(k)]);
+  let h=`<h3>${T('d_w')}</h3><p>${star(2)}</p>`+real(I.wRole[rb(2)]+(c.cls<=1?(lang==='en'?'':'')+IPf('capW'):c.cls>=3?IPf('capS'):''));
   h+=`<h3>${T('d_p')}</h3><p>${star(3)}</p>`;
   if(cnt(3)===0)h+=`<p>${T('pNo')}</p>`;else{if(cnt(4)>0)h+=`<p>${T('pSY')}</p>`;if(cnt(2)>0&&vis(2)+vis(3)>0)h+=`<p>${T('pCG')}</p>`;}
   ['jiang','tianyi'].forEach(k=>{const x=ss(k);if(x)h+=`<p>${L().ss[k][0]}${COL()}${joinL(x.w.map(i=>L().pos[i]))}${par(L().ss[k][1])}</p>`;});
+  if(cnt(3)>0)h+=real(I.pRole[rb(3)]);
   h+=`<h3>${T('d_k')}</h3><p>${star(4)}</p><p>${T('kOut',{n:cnt(1)})}</p>`;
   const wc=ss('wenchang'),hg=ss('huagai');if(wc)h+=`<p>${T('kWC',{pos:joinL(wc.w.map(i=>L().pos[i]))})}</p>`;if(hg)h+=`<p>${T('kHG',{pos:joinL(hg.w.map(i=>L().pos[i]))})}</p>`;
+  const yr=(()=>{let s=false,w=false;P.forEach(p=>{const hh=HID[p.b];if(SE(hh[0])===ce(4))s=true;else if(hh.slice(1).some(x=>SE(x)===ce(4)))w=true;});return s||w;})();
+  h+=real(I.kRole[rb(4)]+(yr?'':(lang==='en'?' ':'')+IPf('kNoRoot')));
   const good=[0,1,2,3,4].filter(e=>c.role[e]<=1).sort((a,b)=>c.role[a]-c.role[b]),bad=[0,1,2,3,4].filter(e=>c.role[e]===4);
   h+=`<h3>${T('d_c')}</h3><p>${T('cGood')}${good.map(e=>`${L().ind[e]}${par(elc(e))}`).join(SEMI())}</p><p>${T('cBad')}${bad.map(e=>`${L().ind[e]}${par(elc(e))}`).join(SEMI())}</p>`;
-  // marriage
+  if(bad.length)h+=real(IPf('cWay',{bad:L().ind[bad[0]].split(lang==='en'?', ':/[、・]/).slice(0,3).join(lang==='en'?', ':'、'),way:I.way[catOf(c,c.fin)]}));
   const male=c.gender==='m',db=P[2].b,cy=new Date().getFullYear();
   h+=`<h3>${T('d_m')}</h3><p>${male?T('mMale',{a:c.tgAll[5],b:c.tgAll[4]}):T('mFem',{a:c.tgAll[7],b:c.tgAll[6]})}</p>`;
   h+=`<p>${T('mPal',{b:B[db],tg:L().ten[tg(dm,HID[db][0])]})}</p>`;
   const pr=c.brRel.filter(r=>r.m.includes(2));h+=`<p>${pr.length?T('mRels',{r:joinL(pr.map(relLabel))}):T('mNoRel')}</p>`;
   const th=ss('taohua');if(th)h+=`<p>${T('mPeach',{pos:joinL(th.w.map(i=>L().pos[i]))})}</p>`;
+  const sc=male?2:3,es=ce(sc),sep=lang==='en'?' ':'';let mm=[];
+  if(HID[db].some(x=>SE(x)===es))mm.push(I.mPal);
+  if(pr.some(r=>['chong','xing','zixing','hai'].includes(r.t)))mm.push(I.mChong);else mm.push(I.mStable);
+  if(pr.some(r=>r.m.includes(1)&&['liuhe','banhe','sanhe','sanhui'].includes(r.t)))mm.push(I.mMonth);
+  if(I.mRole[rb(sc)])mm.push(I.mRole[rb(sc)]);
+  h+=real(mm.join(sep));
   const hl=mod(3-P[0].b,12),txL=mod(hl+6,12),grp=b=>[[8,0,4],[2,6,10],[5,9,1],[11,3,7]].findIndex(g=>g.includes(b)),thB=[9,3,6,0];
   const mY=[];for(let y=cy;y<cy+10;y++){const ys=mod(y-4,10),yb=mod(y-4,12),rs=[];
     if(male&&catOf(c,SE(ys))===2)rs.push(L().reasons.cai);if(!male&&catOf(c,SE(ys))===3)rs.push(L().reasons.guan);
@@ -893,7 +1242,6 @@ function tabDomains(c){
     if(yb===thB[grp(P[0].b)]||yb===thB[grp(db)])rs.push(L().reasons.peach);
     if(rs.length>=2||(rs.length&&rs.includes(L().reasons.spouse)))mY.push(`${y}${par(joinL(rs))}`);}
   if(mY.length)h+=`<p>${T('mTime',{list:mY.join(SEMI())})}</p>`;
-  // children
   const kc=male?3:1,hb=P[3].b;
   h+=`<h3>${T('d_kid')}</h3><p>${male?T('kMale',{n:cnt(3)}):T('kFem',{n:cnt(1)})}</p><p>${T('kPal',{p:gz(P[3])})}</p>`;
   const kY=[];for(let y=cy;y<cy+10;y++){const ys=mod(y-4,10),yb=mod(y-4,12),rs=[];
@@ -905,18 +1253,24 @@ function tabDomains(c){
   const chk=[cnt(kc)===0,cnt(kc)>0&&kw<0.6&&ctrlW>=3,c.brRel.some(r=>r.m.includes(3)&&['chong','xing'].includes(r.t))];
   h+=tbl([T('c_item'),''],L().kChk.map((t,k)=>[t,chk[k]?`<strong>${T('yes')}</strong>`:T('no')]));
   if(!chk.some(Boolean))h+=`<p>${T('kConcl')}</p>`;
-  // health
+  const km=[];if(cnt(kc)===0)km.push(I.kNone);else km.push(kw>=2.5&&rb(kc)===2?I.kStrongBad:kw>=2.5?I.kStrong:'');
+  if(c.role[SE(P[3].s)]<=1)km.push(I.kHour);
+  h+=real(km.filter(Boolean).join(sep));
   const ew=c.elW,mx=Math.max(...ew),mn=Math.min(...ew),hi=[0,1,2,3,4].filter(e=>ew[e]>=mx*0.999),lo=[0,1,2,3,4].filter(e=>ew[e]<=mn*1.001+0.01);
   h+=`<h3>${T('d_h')}</h3><p>${T('hT',{w:joinL(lo.map(elc)),o1:lo.map(e=>L().org[e]).join(SEMI()),s:joinL(hi.map(elc)),o2:hi.map(e=>L().org[e]).join(SEMI())})}</p>`;
+  h+=real(IPf('hNeed',{care:joinL(lo.map(e=>I.hCare[e]))})+(c.tI>=3||c.dI>=3?IPf('hHot'):c.tI<=1?IPf('hCold'):''));
+  h+=`<p class="note">${IPf('rgRef')}</p>`;
   h+=`<h3>${T('d_ss')}</h3>`+(c.ssr.length?tbl([T('c_ss'),T('c_where'),T('c_mean')],c.ssr.map(x=>[L().ss[x.k][0],joinL(x.w.map(i=>L().pos[i]+B[P[i].b])),L().ss[x.k][1]])):`<p>${T('ssNone')}</p>`);
   return h;
 }
+
 function tabApply(c){
   const U=c.fin,X=c.role.indexOf(1),cols=[U,X].filter(e=>e>=0);
   let h=`<h3>${T('a_boost')}</h3>`+tbl([T('c_item'),...cols.map(e=>`${L().role[c.role[e]]}　${elc(e)}`)],[
     [L().a_rows[0],...cols.map(e=>L().dir[e])],[L().a_rows[1],...cols.map(e=>L().color[e])],[L().a_rows[2],...cols.map(e=>L().ind[e])],
     [L().a_rows[3],...cols.map(e=>L().rad[e])],[L().a_rows[4],...cols.map(e=>L().act[catOf(c,e)])]]);
   const good=[0,1,2,3,4].filter(e=>c.role[e]<=1),bad=[0,1,2,3,4].filter(e=>c.role[e]>=3);
+  h+=`<p class="note">${IPf('rgRef')}</p>`;
   h+=`<h3>${T('a_reg')}</h3><p>${T('regT',{a:joinL(good.map(elc)),b:joinL(bad.map(elc)),acts:good.map(e=>L().act[catOf(c,e)]).join(lang==='en'?'; ':'；')})}</p>`;
   h+=`<h3>${T('a_meth')}</h3><p>${T('methT')}</p>`;
   return h;
@@ -1125,7 +1479,7 @@ function stats(v,cls){const b=BOARDS.map(g=>g.reduce((a,i)=>a+v[i],0)/g.length),
 const MKEY='bazi.manual.v1';
 const getMan=()=>{try{return JSON.parse(localStorage.getItem(MKEY)||'{}');}catch(e){return {};}};
 const setMan=m=>{try{localStorage.setItem(MKEY,JSON.stringify(m));}catch(e){}};
-const sigOf=f=>[f.date,f.time,f.city,f.city==='__manual'?f.lon+'/'+f.tz:'',f.gender,f.zi,f.dst?1:0].join('|');
+const sigOf=f=>[f.date,f.time,f.city,(f.manual||f.city==='__manual')?f.lon+'/'+f.tz:'',f.gender,f.zi,f.dst?1:0].join('|');
 let CMP=['cur'],VIEW13=true;
 function seriesCols(){const p=pal();return p.dark?['#E57366','#72B6BA','#8FB8EC','#E6CB4A']:['#A8322D','#2F6F74','#1E4C7A','#B08A12'];}
 const DASH=['','7 4','2 4','9 3 2 3'];
@@ -1203,11 +1557,12 @@ function tabScore(){
     BOARDS.forEach((g,b)=>{h+=`<div class="board"><div class="bh"><span class="sw" style="background:${[p.el[2],p.el[3],p.el[4],p.el[0]][b]}"></span>${SL().boards[b]}<span class="hint">${s0.st.b[b].toFixed(2)}</span></div>`;
       g.forEach(i=>{const man=s0.man[i]!==undefined;h+=`<div class="dim"><div class="dn"><strong>${SL().dims[i]}</strong><div class="hint">${SL().desc[i]}</div></div>
         <div class="dc"><button class="btn sm" data-adj="${i}" data-dv="-0.5" aria-label="${SL().dec}">−</button><span class="dv${man?' man':''}">${s0.v[i].toFixed(1)}${man?`<em>${SL().manual}</em>`:''}</span><button class="btn sm" data-adj="${i}" data-dv="0.5" aria-label="${SL().inc}">+</button>${man?`<button class="lnk" data-reset="${i}">${SL().reset}（${SL().auto} ${s0.sc.auto[i].toFixed(1)}）</button>`:''}</div>
-        <div class="db hint">${esc(s0.sc.basis[i])}</div></div>`;});h+=`</div>`;});}
+        <div class="db"><div class="hint">${esc(s0.sc.basis[i])}</div><div class="mean"><strong>${IPf('meanL')}${lang==='en'?': ':'：'}</strong>${IP[lang].dimM[i][s0.v[i]<=2?0:s0.v[i]>=3.5?2:1]}</div></div></div>`;});h+=`</div>`;});}
   // summary table
   const rows=tableRows(ser);
   h+=`<h3>${SL().sum}</h3><div class="tblwrap"><table class="tbl"><thead><tr><th></th>${ser.map(s=>`<th><svg width="24" height="8"><line x1="0" y1="4" x2="24" y2="4" stroke="${s.col}" stroke-width="2.4" ${s.dash?`stroke-dasharray="${s.dash}"`:''}/></svg> ${esc(s.name)}</th>`).join('')}</tr></thead><tbody>`+
     rows.map(r=>`<tr><th${r.board||r.strong?' style="color:var(--ink)"':''}>${esc(r.lab)}</th>${r.vals.map(v=>`<td${r.strong?' style="font-weight:600"':''}>${esc(v.t)}${v.top?` <span class="stamp">${SL().top}</span>`:''}${v.man?` <span class="mdot" title="${SL().manual}"></span>`:''}</td>`).join('')}</tr>`).join('')+`</tbody></table></div>`;
+  h+=ser.map(s=>real(`${esc(s.name)}${lang==='en'?': ':'：'}${SL().types[s.st.type]}${lang==='en'?'. ':'。'}${IP[lang].typeM[s.st.type]}`)).join('');
   h+=`<p class="note">${SL().foot}</p>`;
   return h;
 }
@@ -1221,7 +1576,7 @@ function bindScore(){
   const wrap=$('radarwrap'),tip=$('rtip');if(!wrap)return;
   const show=el=>{const ser=seriesList(),s=ser[+el.dataset.s],i=+el.dataset.d;if(!s)return;
     const head=VIEW13?SL().dims[i]:SL().boards[i],val=VIEW13?s.v[i].toFixed(1):s.st.b[i].toFixed(2);
-    const body=VIEW13?esc(s.sc.basis[i])+(s.man[i]!==undefined?`<br>${SL().manual}${lang==='en'?': ':'：'}${s.v[i].toFixed(1)}　${SL().auto} ${s.sc.auto[i].toFixed(1)}`:''):BOARDS[i].map(d=>`${SL().dims[d]} ${s.v[d].toFixed(1)}`).join('<br>');
+    const body=VIEW13?esc(s.sc.basis[i])+`<br>${IPf('meanL')}${lang==='en'?': ':'：'}${IP[lang].dimM[i][s.v[i]<=2?0:s.v[i]>=3.5?2:1]}`+(s.man[i]!==undefined?`<br>${SL().manual}${lang==='en'?': ':'：'}${s.v[i].toFixed(1)}　${SL().auto} ${s.sc.auto[i].toFixed(1)}`:''):BOARDS[i].map(d=>`${SL().dims[d]} ${s.v[d].toFixed(1)}`).join('<br>');
     const same=ser.filter(x=>x!==s&&Math.abs((VIEW13?x.v[i]:x.st.b[i])-(VIEW13?s.v[i]:s.st.b[i]))<1e-9);
     const others=ser.length>1?`<div class="hint" style="margin-top:4px">${ser.map(x=>`<span style="color:${x.col}">●</span> ${esc(x.name)} ${VIEW13?x.v[i].toFixed(1):x.st.b[i].toFixed(2)}`).join('<br>')}</div>`:'';
     tip.innerHTML=`<div style="color:${s.col};font-weight:600">${esc(s.name)}${same.length?`<span class="hint">　＋${same.length}</span>`:''}</div><div><strong>${head}　${val}</strong></div><div class="hint">${body}</div>${others}`;tip.hidden=false;
@@ -1235,47 +1590,62 @@ function bindScore(){
 /* ---------- UI ---------- */
 const $=id=>document.getElementById(id);
 let C=null,SEL={luck:0,year:new Date().getFullYear()},TAB=0,DL=null;
-let FORM={name:'',gender:'m',date:'',time:'',city:'北京',country:'cn',prov:'0',lon:'',tz:'8',dst:false,zi:'newday'};
-try{const f=JSON.parse(localStorage.getItem('bazi.form')||'null');if(f)FORM=Object.assign(FORM,f);}catch(e){}
+let FORM={name:'',gender:'m',date:'',time:'',city:'',country:'',prov:'0',lon:'',tz:'',dst:false,zi:'newday'};
+try{localStorage.removeItem('bazi.form');}catch(e){}
 function cityName(ct){return nm(ct);}
-function locOf(f){if(f.city&&f.city!=='__manual'){const ct=CITIES.find(x=>x.zh===f.city);if(ct)return {c:ct.country.id,p:ct.country.provs.indexOf(ct.prov)};}
-  const c=GEO.find(x=>x.id===f.country)?f.country:'other',g=GEO.find(x=>x.id===c);return {c,p:Math.min(+(f.prov||0),Math.max(0,g.provs.length-1))};}
-function fillProv(cid,pi){const g=GEO.find(x=>x.id===cid)||GEO[0],el=$('f-prov');
-  el.innerHTML=g.provs.length?g.provs.map((p,i)=>`<option value="${i}"${i===pi?' selected':''}>${esc(nm(p))}</option>`).join(''):`<option value="0">${esc(T('manualCity'))}</option>`;el.disabled=!g.provs.length;}
-function fillCity(cid,pi,city){const g=GEO.find(x=>x.id===cid),p=g&&g.provs[pi],el=$('f-city');
-  const has=p&&p.cities.some(x=>x[0]===city);
-  el.innerHTML=(p?p.cities:[]).map((x,i)=>`<option value="${esc(x[0])}"${(has?x[0]===city:i===0&&city!=='__manual')?' selected':''}>${esc(nm({zh:x[0],en:x[1],ja:x[4]}))}</option>`).join('')+`<option value="__manual"${!p||city==='__manual'?' selected':''}>${esc(T('manualCity'))}</option>`;
-  $('f-manual').style.display=el.value==='__manual'?'block':'none';}
+function locOf(f){const k=(f.city&&f.city!=='__manual')?normKey(f.city):'',L0=k?LOCS[k]:null;
+  if(L0){const g=L0.country;return {c:g.id,p:L0.prov?g.provs.indexOf(L0.prov):0,key:k};}
+  if(!f.country||!GEO.find(x=>x.id===f.country))return {c:'',p:0,key:''};
+  const c=f.country,g=GEO.find(x=>x.id===c);return {c,p:Math.min(+(f.prov||0),Math.max(0,(g.provs||[]).length-1)),key:''};}
+const curGeo=()=>GEO.find(x=>x.id===$('f-country').value)||GEO[0];
+function selKey(){if(!$('f-country').value)return '';const g=curGeo();if(g.mode==='city')return $('f-city').value;if(g.mode==='prov')return g.id+'-'+g.provs[+$('f-prov').value||0].zh;if(g.mode==='country')return 'ct-'+g.id;return '';}
+function fillPlace(cid,pi,key){
+  if(!cid){$('f-provwrap').hidden=true;$('f-citywrap').hidden=true;$('f-placehint').hidden=true;$('f-man').checked=false;$('f-man').disabled=true;syncManual();return;}
+  const g=GEO.find(x=>x.id===cid)||GEO[0];
+  $('f-provwrap').hidden=!(g.mode==='city'||g.mode==='prov');$('f-citywrap').hidden=g.mode!=='city';
+  if(g.provs){$('f-provlab').textContent=T(g.id==='jp'?'prefL':g.id==='us'?'stateL':'provL');
+    $('f-prov').innerHTML=g.provs.map((p,i)=>`<option value="${i}"${i===pi?' selected':''}>${esc(nm(p))}</option>`).join('');}
+  if(g.mode==='city'){const p=g.provs[pi]||g.provs[0],has=p.cities.some(x=>x[0]===key);
+    $('f-city').innerHTML=p.cities.map((x,i)=>`<option value="${esc(x[0])}"${(has?x[0]===key:i===0)?' selected':''}>${esc(nm({zh:x[0],en:x[1],ja:x[4]}))}</option>`).join('');}
+  const hint=$('f-placehint');hint.hidden=g.mode!=='country';hint.textContent=g.mode==='country'?T(g.multi?'ctryMulti':'ctryHint'):'';
+  const man=$('f-man');if(g.mode==='manual'){man.checked=true;man.disabled=true;}else man.disabled=false;
+  syncManual();}
+function syncManual(){const on=$('f-man').checked;$('f-manual').style.display=on?'block':'none';
+  if(on&&!$('f-lon').value){const L0=LOCS[selKey()];if(L0){$('f-lon').value=L0.lon;$('f-tz').value=L0.tz;}}}
 function buildForm(){
   const loc=locOf(FORM);
   $('form').innerHTML=`
   <label for="f-name">${T('name')}</label><input type="text" id="f-name" value="${esc(FORM.name)}" autocomplete="off">
   <label>${T('gender')}</label><div class="seg"><label><input type="radio" name="g" value="m"${FORM.gender==='m'?' checked':''}>${T('male')}</label><label><input type="radio" name="g" value="f"${FORM.gender==='f'?' checked':''}>${T('female')}</label></div>
-  <label for="f-date">${T('date')}</label><input type="date" id="f-date" value="${FORM.date}" min="1900-01-01" max="2100-12-31">
+  <label for="f-y">${T('date')}</label><div class="date3"><select id="f-y" aria-label="${T('yL')}"></select><select id="f-mo" aria-label="${T('moL')}"></select><select id="f-d" aria-label="${T('dL')}"></select></div><input type="hidden" id="f-date" value="${esc(FORM.date)}">
   <label for="f-time">${T('time')}</label><input type="time" id="f-time" value="${FORM.time}">
   <label>${T('place')}</label>
-  <label for="f-country" class="sublab">${T('countryL')}</label><select id="f-country">${GEO.map(c=>`<option value="${c.id}"${c.id===loc.c?' selected':''}>${esc(nm(c))}</option>`).join('')}</select>
-  <label for="f-prov" class="sublab">${T('provL')}</label><select id="f-prov"></select>
-  <label for="f-city" class="sublab">${T('cityL')}</label><select id="f-city"></select>
-  <div id="f-manual" style="display:${FORM.city==='__manual'?'block':'none'}"><div class="row2"><div><label for="f-lon">${T('lon')}</label><input type="number" id="f-lon" step="0.01" value="${esc(FORM.lon)}"></div><div><label for="f-tz">${T('tz')}</label><input type="number" id="f-tz" step="0.5" value="${esc(FORM.tz)}"></div></div></div>
+  <label for="f-country" class="sublab">${T('countryL')}</label><select id="f-country"><option value=""${loc.c?'':' selected'}>${T('chooseL')}</option>${GEO.map(c=>`<option value="${c.id}"${c.id===loc.c?' selected':''}>${esc(nm(c))}</option>`).join('')}</select>
+  <div id="f-provwrap"><label for="f-prov" class="sublab" id="f-provlab">${T('provL')}</label><select id="f-prov"></select></div>
+  <div id="f-citywrap"><label for="f-city" class="sublab">${T('cityL')}</label><select id="f-city"></select></div>
+  <div class="hint" id="f-placehint" hidden></div>
+  <label class="check" style="margin-top:8px"><input type="checkbox" id="f-man"${FORM.manual||FORM.city==='__manual'?' checked':''}><span>${T('manualT')}</span></label>
+  <div id="f-manual" style="display:none"><div class="row2"><div><label for="f-lon">${T('lon')}</label><input type="number" id="f-lon" step="0.01" value="${esc(FORM.lon)}"></div><div><label for="f-tz">${T('tz')}</label><input type="number" id="f-tz" step="0.5" value="${esc(FORM.tz)}"></div></div></div>
   <label class="check" id="f-dstwrap"><input type="checkbox" id="f-dst"${FORM.dst?' checked':''}><span>${T('dst')}</span></label>
   <div class="hint">${T('dstAuto')}</div>
   <label for="f-zi">${T('zi')}</label><select id="f-zi"><option value="newday"${FORM.zi==='newday'?' selected':''}>${T('ziA')}</option><option value="late"${FORM.zi==='late'?' selected':''}>${T('ziB')}</option></select>
   <div class="err" id="f-err" role="alert"></div>
   <div class="btns"><button class="btn primary" id="b-cast">${T('cast')}</button><button class="btn" id="b-save">${T('save')}</button></div>
-  <div class="saved" id="savedbox"></div>`;
-  fillProv(loc.c,loc.p);fillCity(loc.c,loc.p,FORM.city);
-  $('f-country').onchange=()=>{const c=$('f-country').value,g=GEO.find(x=>x.id===c);fillProv(c,0);fillCity(c,0,g&&g.provs[0]?g.provs[0].cities[0][0]:'__manual');};
-  $('f-prov').onchange=()=>{const c=$('f-country').value,pi=+$('f-prov').value,g=GEO.find(x=>x.id===c);fillCity(c,pi,g&&g.provs[pi]?g.provs[pi].cities[0][0]:'__manual');};
-  $('f-city').onchange=()=>{$('f-manual').style.display=$('f-city').value==='__manual'?'block':'none';};
+  <div class="saved" id="savedbox"></div>
+  <div class="tipcard" id="tipcard" hidden><h3>${T('tipT')}</h3><p>${T('tipD')}</p><img id="tipimg" alt="${esc(T('tipScan'))}" width="160" height="160"><div class="hint">${T('tipScan')}</div><div class="hint">${T('tipMobile')}</div>${TIP.url?`<a class="btn primary" style="display:inline-block;margin-top:8px;text-decoration:none" href="${esc(TIP.url)}" target="_blank" rel="noopener">${T('tipOpen')}</a>`:''}</div>`;
+  {const im=$('tipimg');im.onload=()=>{TIPOK=true;$('tipcard').hidden=false;};im.onerror=()=>{TIPOK=false;$('tipcard').hidden=true;$('tipbar').hidden=true;};im.src=TIP.img;}
+  initDate();fillPlace(loc.c,loc.p,loc.key);
+  $('f-country').onchange=()=>{$('f-lon').value='';fillPlace($('f-country').value,0,'');};
+  $('f-prov').onchange=()=>{$('f-lon').value='';fillPlace($('f-country').value,+$('f-prov').value,'');};
+  $('f-city').onchange=()=>{$('f-lon').value='';syncManual();};
+  $('f-man').onchange=()=>{if($('f-man').checked)$('f-lon').value='';syncManual();};
   $('b-cast').onclick=cast;$('b-save').onclick=saveChart;
   ['f-name','f-date','f-time','f-lon','f-tz'].forEach(id=>$(id).addEventListener('keydown',e=>{if(e.key==='Enter')cast();}));
   renderSaved();
 }
 function readForm(){
   const g=document.querySelector('input[name=g]:checked');
-  FORM={name:$('f-name').value.trim(),gender:g?g.value:'m',date:$('f-date').value,time:$('f-time').value,city:$('f-city').value,country:$('f-country').value,prov:$('f-prov').value,lon:$('f-lon').value,tz:$('f-tz').value,dst:$('f-dst').checked,zi:$('f-zi').value};
-  try{localStorage.setItem('bazi.form',JSON.stringify(FORM));}catch(e){}
+  FORM={name:$('f-name').value.trim(),gender:g?g.value:'m',date:$('f-date').value,time:$('f-time').value,city:selKey(),manual:$('f-man').checked,country:$('f-country').value,prov:$('f-prov').value,lon:$('f-lon').value,tz:$('f-tz').value,dst:$('f-dst').checked,zi:$('f-zi').value};
   return FORM;
 }
 function toInput(f){
@@ -1283,11 +1653,12 @@ function toInput(f){
   if(!dm||!tm)return {err:T('errDate')};
   const y=+dm[1],m=+dm[2],d=+dm[3],hh=+tm[1],mi=+tm[2];
   if(y<1900||y>2100||m<1||m>12||d<1||d>31||hh>23||mi>59)return {err:T('errDate')};
-  let lon,tz,cn,placeName;
-  if(f.city==='__manual'){lon=parseFloat(f.lon);tz=parseFloat(f.tz);cn=false;placeName=`${isNaN(lon)?'':lon.toFixed(2)}°`;
-    if(isNaN(lon)||lon<-180||lon>180||isNaN(tz)||tz<-12||tz>14)return {err:T('errLon')};}
-  else{const ct=CITIES.find(x=>x.zh===f.city)||CITIES.find(x=>x.zh==='北京');lon=ct.lon;tz=ct.tz;cn=ct.g==='cn';placeName=cityName(ct);}
-  return {y,m,d,hh,mi,lon,tz,cn,dstManual:!!f.dst,zi:f.zi,gender:f.gender,name:f.name,placeName};
+  let lon,tz,cn,placeName,us=null;const L0=findLoc(f.city);
+  if(f.manual||f.city==='__manual'){lon=parseFloat(f.lon);tz=parseFloat(f.tz);cn=(L0?L0.g:f.country)==='cn';
+    if(isNaN(lon)||lon<-180||lon>180||isNaN(tz)||tz<-12||tz>14)return {err:T('errLon')};
+    placeName=(L0?nm(L0)+' ':'')+`${lon.toFixed(2)}°`;}
+  else{if(!L0)return {err:T('errPlace')};const ct=L0;lon=ct.lon;tz=ct.tz;cn=ct.g==='cn';us=ct.g==='us'?ct.code:null;placeName=nm(ct);}
+  return {y,m,d,hh,mi,lon,tz,cn,us,dstManual:!!f.dst,zi:f.zi,gender:f.gender,name:f.name,placeName};
 }
 function cast(){
   const f=readForm(),inp=toInput(f);
@@ -1296,8 +1667,10 @@ function cast(){
   C=compute(inp);C.sig=sigOf(f);
   const cy=new Date().getFullYear();let li=C.luck.findIndex(l=>cy>=l.startY&&cy<l.startY+10);if(li<0)li=cy<C.luck[0].startY?0:C.luck.length-1;
   SEL={luck:li,year:(cy>=C.luck[li].startY&&cy<C.luck[li].startY+10)?cy:C.luck[li].startY};
-  renderAll();
+  renderAll();showTipBar();
 }
+function showTipBar(){let off=false;try{off=sessionStorage.getItem('bazi.tipoff')==='1';}catch(e){}
+  if(!TIPOK||off){$('tipbar').hidden=true;return;}$('tipbar-t').textContent=T('tipBar');$('tipbar-see').textContent=T('tipSee');$('tipbar-x').textContent=T('tipClose');$('tipbar').hidden=false;}
 function renderChart(){$('chartwrap').innerHTML=svgChart(C,SEL);}
 function renderStrips(){
   const p=pal(),cy=new Date().getFullYear();
@@ -1311,9 +1684,21 @@ function renderTab(){
   const f=[tabBasic,tabStructure,tabPattern,tabFortune,tabDomains,tabApply,tabScore][TAB];
   $('tabpanel').innerHTML=f(C,SEL);if(TAB===6)bindScore();
 }
+function goTabs(){const a=$('tabsAnchor');if(!a)return;const top=a.getBoundingClientRect().top+window.scrollY;if(window.scrollY>top)window.scrollTo({top,behavior:'auto'});
+  const b=$('tab'+TAB);if(b&&b.scrollIntoView)b.scrollIntoView({block:'nearest',inline:'nearest'});}
+function stuckCheck(){const a=$('tabsAnchor'),n=$('tabs');if(a&&n)n.classList.toggle('stuck',a.getBoundingClientRect().top<0);}
+window.addEventListener('scroll',stuckCheck,{passive:true});
+function initDate(){const pr=(FORM.date||'').split('-').map(Number),yy=pr[0]||0,mm=pr[1]||0,dd=pr[2]||0,ph=k=>`<option value="">${T(k)}</option>`;
+  const MN=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  let o=ph('yL');for(let y=1900;y<=2100;y++)o+=`<option value="${y}"${y===yy?' selected':''}>${lang==='en'?y:y+'年'}</option>`;$('f-y').innerHTML=o;
+  o=ph('moL');for(let m=1;m<=12;m++)o+=`<option value="${m}"${m===mm?' selected':''}>${lang==='en'?MN[m-1]:m+'月'}</option>`;$('f-mo').innerHTML=o;
+  fillDays(dd);$('f-y').onchange=$('f-mo').onchange=()=>fillDays(+$('f-d').value||0);$('f-d').onchange=syncDate;}
+function fillDays(keep){const y=+$('f-y').value,m=+$('f-mo').value,n=m?new Date(Date.UTC(y||2000,m,0)).getUTCDate():31,d=Math.min(keep,n);
+  let o=`<option value="">${T('dL')}</option>`;for(let i=1;i<=n;i++)o+=`<option value="${i}"${i===d?' selected':''}>${lang==='en'?i:i+'日'}</option>`;$('f-d').innerHTML=o;syncDate();}
+function syncDate(){const y=$('f-y').value,m=$('f-mo').value,d=$('f-d').value;$('f-date').value=(y&&m&&d)?`${y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`:'';}
 function renderTabs(){
-  $('tabs').innerHTML=L().tabs.map((t,k)=>`<button role="tab" id="tab${k}" aria-selected="${k===TAB}" tabindex="${k===TAB?0:-1}">${t}</button>`).join('');
-  $('tabs').querySelectorAll('button').forEach((b,k)=>{b.onclick=()=>{TAB=k;renderTabs();renderTab();};
+  $('tabs').innerHTML=L().tabs.map((t,k)=>`<button role="tab" id="tab${k}" aria-selected="${k===TAB}" tabindex="${k===TAB?0:-1}"><span class="no">${k+1}</span>${t}</button>`).join('');
+  $('tabs').querySelectorAll('button').forEach((b,k)=>{b.onclick=()=>{TAB=k;renderTabs();renderTab();goTabs();};
     b.onkeydown=e=>{if(e.key==='ArrowRight'||e.key==='ArrowLeft'){TAB=mod(TAB+(e.key==='ArrowRight'?1:-1),7);renderTabs();renderTab();$('tab'+TAB).focus();}};});
   $('tabpanel').setAttribute('aria-labelledby','tab'+TAB);
 }
@@ -1331,6 +1716,7 @@ function renderStatic(){
   document.title=T('title');$('t-title').textContent=T('title');$('t-sub').textContent=T('sub');
   $('t-luck').textContent=T('luckH');$('t-years').textContent=T('yearsH');$('t-disc').textContent=T('disc');
   $('b-png').textContent=T('png');$('b-svg').textContent=T('svg');
+  if(!$('tipbar').hidden){$('tipbar-t').textContent=T('tipBar');$('tipbar-see').textContent=T('tipSee');$('tipbar-x').textContent=T('tipClose');}
   document.querySelectorAll('.lang button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.lang===lang));
 }
 function renderAll(){renderStatic();renderLayers();if(!C){$('chartwrap').innerHTML=`<div class="empty">${esc(T('emptyHint'))}</div>`;return;}renderChart();renderStrips();renderTabs();renderTab();}
@@ -1340,7 +1726,7 @@ function setSaved(a){try{localStorage.setItem('bazi.saved.v1',JSON.stringify(a))
 function saveChart(){const f=readForm(),a=getSaved(),sig=sigOf(f);const label=(f.name||T('savedName'))+' '+f.date+' '+f.time;const rest=a.filter(e=>sigOf(e.f)!==sig);rest.unshift({label,f,manual:getMan()[sig]||{}});setSaved(rest.slice(0,30));renderSaved();if(TAB===6)renderTab();}
 function renderSaved(){const a=getSaved(),box=$('savedbox');if(!box)return;if(!a.length){box.innerHTML='';return;}
   box.innerHTML=`<h3>${T('saved')}</h3><ul>${a.map((s,k)=>`<li><span>${esc(s.label)}</span><span><button data-k="${k}" class="ld">${T('load')}</button><button data-k="${k}" class="del">${T('del')}</button></span></li>`).join('')}</ul>`;
-  box.querySelectorAll('.ld').forEach(b=>b.onclick=()=>{const e=getSaved()[+b.dataset.k];FORM=Object.assign({},e.f);if(e.manual&&Object.keys(e.manual).length){const m=getMan();m[sigOf(e.f)]=e.manual;setMan(m);}buildForm();cast();});
+  box.querySelectorAll('.ld').forEach(b=>b.onclick=()=>{const e=getSaved()[+b.dataset.k];const f0=Object.assign({},e.f);f0.city=normKey(f0.city);FORM=f0;if(e.manual&&Object.keys(e.manual).length){const m=getMan();m[sigOf(f0)]=e.manual;setMan(m);}buildForm();cast();});
   box.querySelectorAll('.del').forEach(b=>b.onclick=()=>{const x=getSaved();x.splice(+b.dataset.k,1);setSaved(x);renderSaved();if(TAB===6)renderTab();});}
 /* export */
 function exportName(ext){return `bazi-${(C.inp.name||'chart').replace(/[^\w\u4e00-\u9fff\u3040-\u30ff-]/g,'')}-${C.inp.y}${String(C.inp.m).padStart(2,'0')}${String(C.inp.d).padStart(2,'0')}.${ext}`;}
@@ -1362,6 +1748,8 @@ async function doExport(kind){
     await DL.save({filename:exportName(kind),data});
   }catch(e){if(e&&(e.code==='unavailable'||e.code==='not_granted')){$('b-png').hidden=true;$('b-svg').hidden=true;}}
 }
+$('tipbar-see').onclick=()=>{const t=$('tipcard');t.scrollIntoView({behavior:'smooth',block:'center'});};
+$('tipbar-x').onclick=()=>{try{sessionStorage.setItem('bazi.tipoff','1');}catch(e){}$('tipbar').hidden=true;};
 $('b-png').onclick=()=>doExport('png');$('b-svg').onclick=()=>doExport('svg');
 document.querySelectorAll('.lang button').forEach(b=>b.onclick=()=>{lang=b.dataset.lang;try{localStorage.setItem('bazi.lang',lang);}catch(e){}readForm();buildForm();const inp=toInput(FORM);if(C&&!inp.err)C=compute(inp);renderAll();});
 matchMedia('(prefers-color-scheme: dark)').addEventListener('change',()=>renderAll());
